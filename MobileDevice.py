@@ -83,7 +83,6 @@ AMD_IPHONE_PRODUCT_ID = 0x1290
 
 # Services, found in /System/Library/Lockdown/Services.plist
 AMSVC_BACKUP = CFSTR(u'com.apple.mobilebackup')
-AMSVC_CRASH_REPORT_COPY = CFSTR(u'com.apple.crashreportcopy')
 AMSVC_DEBUG_IMAGE_MOUNT = CFSTR(u'com.apple.mobile.debug_image_mount')
 AMSVC_NOTIFICATION_PROXY = CFSTR(u'com.apple.mobile.notification_proxy')
 AMSVC_PURPLE_TEST = CFSTR(u'com.apple.purpletestr')
@@ -91,9 +90,11 @@ AMSVC_SOFTWARE_UPDATE = CFSTR(u'com.apple.mobile.software_update')
 AMSVC_SYNC = CFSTR(u'com.apple.mobilesync')
 AMSVC_SCREENSHOT = CFSTR(u'com.apple.screenshotr')
 AMSVC_SYSTEM_PROFILER = CFSTR(u'com.apple.mobile.system_profiler')
-AMSVC_HOUSE_ARREST = CFSTR(u'com.apple.mobile.house_arrest')
-AMSVC_INSTALLATION_PROXY = CFSTR(u'com.apple.mobile.installation_proxy')
 
+AMSVC_SPRINGBOARD_SERVICES = CFSTR(u'com.apple.springboardservices')
+AMSVC_INSTALLATION_PROXY = CFSTR(u'com.apple.mobile.installation_proxy')
+AMSVC_HOUSE_ARREST = CFSTR(u'com.apple.mobile.house_arrest')
+AMSVC_CRASH_REPORT_COPY_MOBILE = CFSTR(u'com.apple.crashreportcopymobile')
 AMSVC_AFC = CFSTR(u'com.apple.afc')
 AMSVC_SYSLOG_RELAY = CFSTR(u'com.apple.syslog_relay')
 AMSVC_FILE_RELAY = CFSTR(u'com.apple.mobile.file_relay')
