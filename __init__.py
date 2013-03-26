@@ -26,9 +26,14 @@
 as a submodule in git
 """
 
+from afcapplicationdirectory import *
+from afccrashlogdirectory import *
+from afcmediadirectory import *
+from afcroot import *
 from amdevice import *
-from afc import *
 from diagnostics import *
+from installationproxy import *
+from springboard import *
 from filerelay import *
 from syslog import *
 from webkitinspector import *
