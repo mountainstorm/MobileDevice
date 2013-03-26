@@ -46,7 +46,7 @@ class FileRelay(PlistService):
 	# tmp
 	# SystemConfiguration
 	# returns a .cpio.gz file with the contents
-	def request(self, sources):
+	def get_filesets(self, sources):
 		retval = False
 		self._sendmsg({u'Sources': sources})
 		reply = self._recvmsg()
@@ -68,7 +68,7 @@ if __name__ == u'__main__':
 		fr = FileRelay(d)
 
 		f = open(u'dump.cpio.gz', 'wb')
-		f.write(fr.retrieve([
+		f.write(fr.get_filesets([
 			u'AppleSupport',
 			u'Network',
 			u'VPN',
