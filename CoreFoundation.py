@@ -24,6 +24,7 @@
 
 from ctypes import *
 import platform
+import datetime
 
 
 if platform.system() == u'Darwin':
@@ -209,6 +210,22 @@ CFDictionaryGetKeysAndValues.argtypes = [
 ]
 
 
+# CFDate
+CFDateRef = c_void_p
+
+CFDateGetTypeID = CoreFoundation.CFDateGetTypeID
+CFDateGetTypeID.restype = CFTypeID
+CFDateGetTypeID.argtypes = []
+
+CFDateCreate = CoreFoundation.CFDateCreate
+CFDateCreate.restype = CFDateRef
+CFDateCreate.argtypes = [CFAllocatorRef, c_double]
+
+CFDateGetAbsoluteTime = CoreFoundation.CFDateGetAbsoluteTime
+CFDateGetAbsoluteTime.restype = c_double
+CFDateGetAbsoluteTime.argtypes = [CFDateRef]
+
+
 # CFPropertyList
 CFPropertyListRef = c_void_p
 CFPropertyListFormat = c_long
@@ -343,6 +360,8 @@ def CFTypeFrom(value):
 			len(value),
 			None
 		)
+	elif isinstance(value, datetime.datetime):
+		retval = CFDateCreate(None, value.time()) # TODO: sort out the origin
 	else:
 		raise RuntimeError(value, type(value))
 
@@ -391,7 +410,12 @@ def CFTypeTo(value):
 		for i in range(0, CFArrayGetCount(value)):
 			v = CFArrayGetValueAtIndex(value, i)
 			retval.append(CFTypeTo(v))
+
+	elif typeid == CFDateGetTypeID():
+		retval = datetime.datetime.fromtimestamp(CFDateGetAbsoluteTime(value)) # sort out origin
+
 	else:
+		CFShow(value)
 		raise RuntimeError(value, type(value), typeid)
 	return retval
 
