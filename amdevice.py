@@ -55,8 +55,12 @@ class AMDevice(object):
 
 	def copy_value(self, domain=None, value_name=None):
 		retval = None
-		d = CFTypeFrom(domain)
-		v = CFTypeFrom(value_name)
+		d = None
+		v = None
+		if domain is not None:
+			d = CFTypeFrom(domain)
+		if value_name is not None:
+			v = CFTypeFrom(value_name)
 		value = AMDeviceCopyValue(self.dev, d, v)
 		if d is not None: 
 			CFRelease(d)
@@ -97,9 +101,12 @@ def handle_devices(factory):
 
 
 if __name__ == u'__main__':
+	import pprint
+
 	def factory(dev):
 		d = AMDevice(dev)
 		d.connect()
+		pprint.pprint(d.copy_value())
 		return d
 	
 	handle_devices(factory)
