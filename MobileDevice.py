@@ -65,6 +65,7 @@ MDERR_QUERY_FAILED		= (ERR_MOBILE_DEVICE | 0x04)
 MDERR_INVALID_ARGUMENT	= (ERR_MOBILE_DEVICE | 0x0b)
 MDERR_DICT_NOT_LOADED	= (ERR_MOBILE_DEVICE | 0x25)
 
+
 # Apple File Connection (AFC*) errors
 MDERR_AFC_OUT_OF_MEMORY = 0x03
 
@@ -198,7 +199,96 @@ class AMBootloaderControlPacket(Structure):
 AMBootloaderControlPacketRef = POINTER(AMBootloaderControlPacket)
 
 
-# Public routines
+# AMDevice* routines
+AMDeviceActivate = MobileDevice.AMDeviceActivate
+AMDeviceActivate.restype = mach_error_t
+AMDeviceActivate.argtypes = [AMDeviceRef, CFTypeRef]
+
+# TODO: _AMDeviceArchiveApplication
+# TODO: _AMDeviceCheckCapabilitiesMatch
+
+AMDeviceConnect = MobileDevice.AMDeviceConnect
+AMDeviceConnect.restype = mach_error_t
+AMDeviceConnect.argtypes = [AMDeviceRef]
+
+# AMDeviceConvertError - does nothing
+
+# TODO: _AMDeviceCopyAuthInstallPreflightOptions
+
+# AMDeviceCopyDeviceIdentifier - returns same value as AMDeviceGetName
+
+AMDeviceCopyDeviceLocation = MobileDevice.AMDeviceCopyDeviceLocation
+AMDeviceCopyDeviceLocation.restype = c_long
+AMDeviceCopyDeviceLocation.argtypes = [AMDeviceRef]
+
+# TODO: _AMDeviceCopyProvisioningProfiles
+
+AMDeviceCopyValue = MobileDevice.AMDeviceCopyValue
+AMDeviceCopyValue.restype = CFDictionaryRef
+AMDeviceCopyValue.argtypes = [AMDeviceRef, CFStringRef, CFStringRef]
+
+# AMDeviceCreate - not needed as we don't directly create devices
+# AMDeviceCreateCopy - not needed as we don't directly create devices
+# AMDeviceCreateFromProperties - not needed as we don't directly create devices
+# AMDeviceCreateHouseArrestService - we only need StartHouseArrestService
+
+# TODO: _AMDeviceCreateWakeupToken
+
+AMDeviceDeactivate = MobileDevice.AMDeviceDeactivate
+AMDeviceDeactivate.restype = mach_error_t
+AMDeviceDeactivate.argtypes = [AMDeviceRef]
+
+AMDeviceDisconnect = MobileDevice.AMDeviceDisconnect
+AMDeviceDisconnect.restype = mach_error_t
+AMDeviceDisconnect.argtypes = [AMDeviceRef]
+
+AMDeviceEnterRecovery = MobileDevice.AMDeviceEnterRecovery
+AMDeviceEnterRecovery.restype = mach_error_t
+AMDeviceEnterRecovery.argtypes = [AMDeviceRef]
+
+AMDeviceGetConnectionID = MobileDevice.AMDeviceGetConnectionID
+AMDeviceGetConnectionID.restype = c_ulong
+AMDeviceGetConnectionID.argtypes = [AMDeviceRef]
+
+AMDeviceGetInterfaceSpeed = MobileDevice.AMDeviceGetInterfaceSpeed
+AMDeviceGetInterfaceSpeed.restype = c_ulong
+AMDeviceGetInterfaceSpeed.argtypes = [AMDeviceRef]
+
+AMDeviceGetInterfaceType = MobileDevice.AMDeviceGetInterfaceType
+AMDeviceGetInterfaceType.restype = c_long
+AMDeviceGetInterfaceType.argtypes = [AMDeviceRef]
+
+# AMDeviceGetLocalOrRemoteOffsetToResume - dont think we need
+
+AMDeviceGetName = MobileDevice.AMDeviceGetName
+AMDeviceGetName.restype = CFStringRef
+AMDeviceGetName.argtypes = [AMDeviceRef]
+
+# AMDeviceGetTypeID - dont need; returns the CFTypeID for AMDeviceRef
+
+# TODO: AMDeviceGetUserInfo - no idea; returns AMDeviceRef + 96
+
+AMDeviceGetWirelessBuddyFlags = MobileDevice.AMDeviceGetWirelessBuddyFlags
+AMDeviceGetWirelessBuddyFlags.restype = mach_error_t
+AMDeviceGetWirelessBuddyFlags.argtypes = [AMDeviceRef, POINTER(CFTypeRef)]
+
+# TODO: AMDeviceInstallApplication
+
+# AMDeviceInstallPackage - appears to be legacy install (uses Nikita)
+
+# TODO: AMDeviceInstallProvisioningProfile
+
+AMDeviceIsPaired = MobileDevice.AMDeviceIsPaired
+AMDeviceIsPaired.restype = mach_error_t
+AMDeviceIsPaired.argtypes = [AMDeviceRef]
+
+# AMDeviceIsValid - I think it checks if we're connected
+
+# AMDeviceLookupApplicationArchives - legacy version of AMDeviceLookupApplications
+# AMDeviceLookupApplications - sends Browse to installation_proxy; we do directly
+
+# TODO: AMDeviceMountImage - mounts an image directly
+
 AMDeviceNotificationSubscribe = MobileDevice.AMDeviceNotificationSubscribe
 AMDeviceNotificationSubscribe.restype = mach_error_t
 AMDeviceNotificationSubscribe.argtypes = [
@@ -213,53 +303,111 @@ AMDeviceNotificationUnsubscribe = MobileDevice.AMDeviceNotificationUnsubscribe
 AMDeviceNotificationUnsubscribe.restype = mach_error_t
 AMDeviceNotificationUnsubscribe.argtypes = [AMDeviceNotificationRef]
 
-AMDeviceGetConnectionID = MobileDevice.AMDeviceGetConnectionID
-AMDeviceGetConnectionID.restype = c_uint32
-AMDeviceGetConnectionID.argtypes = [AMDeviceRef]
-
-AMDeviceCopyDeviceIdentifier = MobileDevice.AMDeviceCopyDeviceIdentifier
-AMDeviceCopyDeviceIdentifier.restype = CFStringRef
-AMDeviceCopyDeviceIdentifier.argtypes = [AMDeviceRef]
-
-AMDeviceConnect = MobileDevice.AMDeviceConnect
-AMDeviceConnect.restype = mach_error_t
-AMDeviceConnect.argtypes = [AMDeviceRef]
-
-AMDeviceIsPaired = MobileDevice.AMDeviceIsPaired
-AMDeviceIsPaired.restype = mach_error_t
-AMDeviceIsPaired.argtypes = [AMDeviceRef]
-
-AMDevicePair = MobileDevice.AMDevicePair
-AMDevicePair.restype = mach_error_t
-AMDevicePair.argtypes = [AMDeviceRef]
-
-AMDeviceValidatePairing = MobileDevice.AMDeviceValidatePairing
-AMDeviceValidatePairing.restype = mach_error_t
-AMDeviceValidatePairing.argtypes = [AMDeviceRef]
-
-AMDeviceStartSession = MobileDevice.AMDeviceStartSession
-AMDeviceStartSession.restype = mach_error_t
-AMDeviceStartSession.argtypes = [AMDeviceRef]
-
-AMDeviceCopyValue = MobileDevice.AMDeviceCopyValue
-AMDeviceCopyValue.restype = CFStringRef
-AMDeviceCopyValue.argtypes = [AMDeviceRef, CFStringRef, CFStringRef]
-
-AMDeviceStartService = MobileDevice.AMDeviceStartService
-AMDeviceStartService.restype = mach_error_t
-AMDeviceStartService.argtypes = [AMDeviceRef, CFStringRef, POINTER(c_int32)]
-
-AMDeviceStopSession = MobileDevice.AMDeviceStopSession
-AMDeviceStopSession.restype = mach_error_t
-AMDeviceStopSession.argtypes = [AMDeviceRef]
+# AMDevicePair - not needed
+# AMDevicePairWithOptions - not needed
+# AMDevicePreflightOperationCreate - no idea
+# AMDevicePreflightOperationGetRunLoopSource - no idea
+# AMDevicePreflightOperationGetTypeID - no idea
+# AMDevicePreflightOperationInvalidate - no idea
 
 AMDeviceRelease = MobileDevice.AMDeviceRelease
 AMDeviceRelease.restype = None
 AMDeviceRelease.argtypes = [AMDeviceRef]
 
-AMDeviceRetain = MobileDevice.AMDeviceRetain
-AMDeviceRetain.restype = None
-AMDeviceRetain.argtypes = [AMDeviceRef]
+# AMDeviceRemoveApplicationArchive - I'm guessing its the legacy version of AMDeviceSecureUninstallApplication
+
+# TODO: AMDeviceRemoveProvisioningProfile
+
+AMDeviceRemoveValue = MobileDevice.AMDeviceRemoveValue
+AMDeviceRemoveValue.restype = mach_error_t
+AMDeviceRemoveValue.argtypes = [AMDeviceRef, CFStringRef, CFStringRef]
+
+# TODO: AMDeviceSecureRestoreApplication
+
+# AMDeviceRetain - we don't need currently
+# AMDeviceSecureArchiveApplication - we will use the non-secure wrapper
+# AMDeviceSecureCheckCapabilitiesMatch - we will use the non-secure wrapper
+# AMDeviceSecureInstallApplication - we will use the non-secure wrapper
+# AMDeviceSecureRemoveApplicationArchive - legacy, not needed
+# AMDeviceSecureRestoreApplication - we will use the non-secure wrapper
+# AMDeviceSecureStartService - we will use the non-secure wrapper
+# AMDeviceSecureTransferPath - we will use the non-secure wrapper
+# AMDeviceSecureUninstallApplication - we will use the non-secure wrapper
+# AMDeviceSecureUpgradeApplication - we will use the non-secure wrapper
+# AMDeviceSetUserInfo - not needed; sets the user info member of AMDeviceRef
+ 
+AMDeviceSetValue = MobileDevice.AMDeviceSetValue
+AMDeviceSetValue.restype = mach_error_t
+AMDeviceSetValue.argtypes = [AMDeviceRef, CFStringRef, CFStringRef, CFTypeRef]
+
+AMDeviceSetWirelessBuddyFlags = MobileDevice.AMDeviceSetWirelessBuddyFlags
+AMDeviceSetWirelessBuddyFlags.restype = mach_error_t
+AMDeviceSetWirelessBuddyFlags.argtypes = [AMDeviceRef, c_long]
+
+# AMDeviceStartHouseArrestService - we're doing it manually
+
+# AMDeviceStartService - we always use the withOptions variant
+
+AMDeviceStartServiceWithOptions = MobileDevice.AMDeviceStartServiceWithOptions
+AMDeviceStartServiceWithOptions.restype = mach_error_t
+AMDeviceStartServiceWithOptions.argtypes = [
+	AMDeviceRef, 
+	CFStringRef, 
+	CFDictionaryRef,
+	POINTER(c_int32)
+]
+
+AMDeviceStartSession = MobileDevice.AMDeviceStartSession
+AMDeviceStartSession.restype = mach_error_t
+AMDeviceStartSession.argtypes = [AMDeviceRef]
+
+AMDeviceStopSession = MobileDevice.AMDeviceStopSession
+AMDeviceStopSession.restype = mach_error_t
+AMDeviceStopSession.argtypes = [AMDeviceRef]
+
+# TODO: AMDeviceTransferApplication
+# TODO: AMDeviceTransferPath
+
+AMDeviceUSBDeviceID = MobileDevice.AMDeviceUSBDeviceID
+AMDeviceUSBDeviceID.restype = c_long
+AMDeviceUSBDeviceID.argtypes = [AMDeviceRef]
+
+# AMDeviceUSBLocationID - we get the same info by using AMDeviceCopyDeviceLocation
+
+AMDeviceUSBProductID = MobileDevice.AMDeviceUSBProductID
+AMDeviceUSBProductID.restype = c_long
+AMDeviceUSBProductID.argtypes = [AMDeviceRef]
+
+# TODO: AMDeviceUninstallApplication
+# TODO: AMDeviceUninstallPackage
+
+AMDeviceUnpair = MobileDevice.AMDeviceUnpair
+AMDeviceUnpair.restype = mach_error_t
+AMDeviceUnpair.argtypes = [AMDeviceRef]
+
+# TODO: AMDeviceUpgradeApplication
+
+AMDeviceValidatePairing = MobileDevice.AMDeviceValidatePairing
+AMDeviceValidatePairing.restype = mach_error_t
+AMDeviceValidatePairing.argtypes = [AMDeviceRef]
+
+# TODO: AMDeviceWakeupOperationCreateWithToken ??
+
+# AMDeviceWakeupOperationGetTypeID - CFTypeID for WakeOperation
+
+# TODO: AMDeviceWakeupOperationInvalidate
+# TODO: AMDeviceWakeupOperationSchedule
+# TODO: AMDeviceWakeupUsingToken
+
+# TODO: AMDeviceConnectByAddressAndPort (dev, port, &socket)
+
+
+
+
+
+
+
+
 
 AFCConnectionOpen = MobileDevice.AFCConnectionOpen
 AFCConnectionOpen.restype = AFCError
