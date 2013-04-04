@@ -26,16 +26,41 @@ from MobileDevice import *
 
 
 class AMDevice(object):
+	LOCATION_USB = 1
+
+	INTERFACE_USB = 1
+	INTERFACE_WIFI = 2 # TODO: check this
+
 	def __init__(self, dev):
 		self.dev = dev
-		self.deviceid = CFTypeTo(AMDeviceCopyDeviceIdentifier(self.dev))
+
+	def activate(self, activation_record):
+		u'''Sends the activation record to the device - activating it for use
+
+		Arguments:
+		activation_record -- the activation record, this will be converted to 
+							 a CFType
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		record = CFTypeFrom(activation_record)
+		retval = AMDeviceActivate(self.dev, record)
+		CFRelease(record)
+		if retval != MDERR_OK:
+			raise RuntimeError(u'Unable to activate the device')
 
 	def connect(self):
+		u'''Connects to the device, creates pairing record and starts a session
+
+		Error:
+		Raises RuntimeError describing the error condition
+		'''
 		if AMDeviceConnect(self.dev) != MDERR_OK: 
 			raise RuntimeError(u'Unable to connect to device')
 
 		if AMDeviceIsPaired(self.dev) != 1:
-			raise RuntimeError(u'if your phone is locked with a passcode, unlock then reconnect it')
+			raise RuntimeError(u'If your phone is locked with a passcode, unlock then reconnect it')
 
 		if AMDeviceValidatePairing(self.dev) != MDERR_OK: 
 			raise RuntimeError(u'Unable to validate pairing')
@@ -43,36 +68,273 @@ class AMDevice(object):
 		if AMDeviceStartSession(self.dev) != MDERR_OK: 
 			raise RuntimeError(u'Unable to start session')
 
-	def disconnect(self):
-		AMDeviceStopSession(self.dev)
-		AMDeviceRelease(self.dev)
+	def get_deviceid(self):
+		u'''Retrieves the device identifier; labeled "Identifier" in the XCode
+		organiser; a 10 byte value as a string in hex
 
-	def start_service(self, service_name):
-		sock = c_int()
-		if AMDeviceStartService(self.dev, service_name, byref(sock)) != MDERR_OK:
-			raise RuntimeError(u'Unable to start service %s' % service_name)
-		return sock.value
+		Return:
+		On success, the name as a string
 
-	def copy_value(self, domain=None, value_name=None):
+		Error:
+		Raises RuntimeError on error
+		'''
+		# AMDeviceGetName and AMDeviceCopyDeviceIdentifier return the same value
+		# AMDeviceRef + 20
+		cf = AMDeviceGetName(self.dev)
+		if cf is None:
+			raise RuntimeError(u'Unable to get device id')
+		return CFTypeTo(cf)
+
+	def get_location(self):
+		u'''Retrieves the location of the device; the address on the interface
+		(see get_interface_type)
+
+		Return:
+		On success, a AMDevice.LOCATION_* value on success
+
+		Error:
+		Raises RuntimeError on error		
+		'''
+		# AMDeviceCopyDeviceLocation and AMDeviceUSBLocationID both return 
+		# same value
+		# AMDeviceRef + 12
+		retval = AMDeviceCopyDeviceLocation(self.dev)
+		if retval is None:
+			raise RuntimeError(u'Unable to get device location')
+		return retval
+
+	def get_value(self, domain=None, name=None):
+		u'''Retrieves a value from the device
+
+		Arguments:
+		domain -- the domain to retrieve, or None to retrieve default domain
+		          (default None)
+		name -- the name of the value to retrieve, or None to retrieve all 
+		        (default None)
+
+		Return:
+		On success the requested value
+		
+		Error:
+		Raises RuntimeError on error
+
+		TODO:
+		Figure out valid domains
+		'''
 		retval = None
-		d = None
-		v = None
+		cfdomain = None
+		cfname = None
 		if domain is not None:
-			d = CFTypeFrom(domain)
-		if value_name is not None:
-			v = CFTypeFrom(value_name)
-		value = AMDeviceCopyValue(self.dev, d, v)
-		if d is not None: 
-			CFRelease(d)
-		if v is not None:
-			CFRelease(v)
+			cfdomain = CFTypeFrom(domain)
+		if name is not None:
+			cfname = CFTypeFrom(name)
+		value = AMDeviceCopyValue(self.dev, cfdomain, cfname)
+		if cfdomain is not None: 
+			CFRelease(cfdomain)
+		if cfname is not None:
+			CFRelease(cfname)
 		if value is None:
-			raise RuntimeError(u'Unable to copy value %s/%s' % (domain, value_name))
+			raise RuntimeError(u'Unable to retrieve value', domain, name)
+		retval = CFTypeTo(value)
+		CFRelease(value)
+		return retval
 
+	def deactivate(self):
+		u'''Deactivates the device - removing it from the network.  WARNING: 
+		you probably don't want to do this.
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		if AMDeviceDeactivate != MDERR_OK:
+			raise RuntimeError(u'Unable to deactivate the device')
+
+	def disconnect(self):
+		u'''Disconnects from the device, ending the session'''
+		if self.dev is not None:
+			AMDeviceStopSession(self.dev)
+			AMDeviceDisconnect(self.dev)
+			AMDeviceRelease(self.dev)
+			self.dev = None
+
+	def enter_recovery_mode(self):
+		u'''Puts the device inot recovery mode
+
+		Error:
+		Raises RuntimeError on error'''
+		if AMDeviceEnterRecovery(self.dev) != MDERR_OK:
+			raise RuntimeError(u'Unable to put device in recovery mode')
+
+	def get_interface_speed(self):
+		u'''Retrieves the interface speed'''
+		return AMDeviceGetInterfaceSpeed(self.dev)
+
+	def get_interface_type(self):
+		u'''Retrieves the interface type
+
+		Return:
+		None or error, else a AMDevice.INTERFACE_* value on success
+		'''
+		# AMDeviceRef + 24
+		retval = AMDeviceGetInterfaceType(self.dev)
+		if retval == -1:
+			retval = None
+		return retval
+
+	def get_wireless_buddyid(self):
+		u'''Retrieve the wireless buddy id; Probably used to do wifi sync
+
+		Error:
+		Raises a RuntimeError on error
+		'''
+		retval = None
+		obj = CFTypeRef()
+		if AMDeviceGetWirelessBuddyFlags(self.dev, byref(obj)) != MDERR_OK:
+			raise RuntimeError(u'Unable to get wireless buddy id')
+		return CFTypeTo(obj)
+
+	def remove_value(self, domain, name):
+		u'''Removes a value from the device
+
+		Arguments:
+		domain -- the domain to retrieve, or None to retrieve default domain
+		          (default None)
+		name -- the name of the value to retrieve, or None to retrieve all 
+		        (default None)
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		cfdomain = None
+		cfname = None
+		if domain is not None:
+			cfdomain = CFTypeFrom(domain)
+		if name is not None:
+			cfname = CFTypeFrom(name)
+		retval = AMDeviceRemoveValue(self.dev, cfdomain, cfname)
+		if cfdomain is not None: 
+			CFRelease(cfdomain)
+		if cfname is not None:
+			CFRelease(cfname)
 		if value is not None:
 			retval = CFTypeTo(value)
 			CFRelease(value)
+		if retval != MDERR_OK:
+			raise RuntimeError(u'Unable to remove value %s/%s' % (domain, name))
+
+	def set_value(self, domain, name, value):
+		u'''Sets a value on the device
+
+		Arguments:
+		domain -- the domain to retrieve, or None to retrieve default domain
+		          (default None)
+		name -- the name of the value to retrieve, or None to retrieve all 
+		        (default None)
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		cfdomain = None
+		cfname = None
+		if domain is not None:
+			cfdomain = CFTypeFrom(domain)
+		if name is not None:
+			cfname = CFTypeFrom(name)
+		if value is not None:
+			cfvalue = CFTypeFrom(value)
+		retval = AMDeviceRemoveValue(self.dev, cfdomain, cfname, cfvalue)
+		if cfdomain is not None: 
+			CFRelease(cfdomain)
+		if cfname is not None:
+			CFRelease(cfname)
+		if cfvalue is not None:
+			CFRelease(cfvalue)
+		if retval != MDERR_OK:
+			raise RuntimeError(u'Unable to set value %s/%s' % (domain, name, value))
+
+	def set_wireless_buddyid(self, enable_wifi=True, setid=True):
+		u'''Sets the wireless buddyid from iTunes, and optionally enables wifi
+
+		Arguments:
+		enable_wifi -- turns on/off wifi if there a buddy id (default True)
+		setid -- if true, sets buddy id (default True)
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		flags = 0
+		if enable_wifi:
+			flags |= 0x2
+		if setid:
+			flags |= 0x1
+		if AMDeviceSetWirelessBuddyFlags(self.dev, flags) != MDERR_OK:
+			raise RuntimeError(u'Unable to set buddy id flags', enable_wifi, setid)
+
+	def start_service(self, service_name, options=None):
+		u'''Starts the service and returns the socket
+
+		Argument:
+		service_name -- the reverse domain name for the service
+		options -- a dict of options, or None (default None)
+
+		Return:
+		The OS socket associated with the connection to the service
+
+		Error:
+		Raises RuntimeError on error
+		''' 
+		sock = c_int()
+		if AMDeviceStartServiceWithOptions(
+				self.dev, 
+				service_name, 
+				options,
+				byref(sock)
+			) != MDERR_OK:
+			raise RuntimeError(u'Unable to start service %s' % service_name)
+		return sock.value
+
+	def get_usb_deviceid(self):
+		u'''Retrieves the USB device id
+
+		Return:
+		The usb device id
+
+		Error:
+		Raises RuntimeError if theres no usb device id
+		'''
+		# AMDeviceRef + 8
+		retval = AMDeviceUSBDeviceID(self.dev)
+		if retval == 0:
+			raise RuntimeError(u'No usb device id')
 		return retval
+
+	def get_usb_productid(self):
+		u'''Retrieves the USB product id
+
+		Return:
+		The usb product id
+
+		Error:
+		Raises RuntimeError if theres no usb product id
+		'''
+		# AMDeviceRef + 16
+		retval = AMDeviceUSBProductID(self.dev)
+		if retval == 0:
+			raise RuntimeError(u'No usb device id')
+		return retval
+
+	def unpair(self):
+		u'''Unpairs device from host WARNING: you probably dont want to call 
+		this
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		if AMDeviceUnpair(self.dev) != MDERR_OK:
+			raise RuntimeError(u'Unable to unpair device')
+
+
+
 
 
 def handle_devices(factory):
@@ -106,7 +368,15 @@ if __name__ == u'__main__':
 	def factory(dev):
 		d = AMDevice(dev)
 		d.connect()
-		pprint.pprint(d.copy_value())
+		pprint.pprint(d.get_value())
+		print d.get_usb_deviceid()
+		print d.get_usb_productid()
+		print d.get_interface_type()
+		print d.get_interface_speed()
+		print d.get_deviceid()
+		print "%x" % d.get_location()
+		print
+		pprint.pprint(d.get_value(u'com.apple.'))
 		return d
 	
 	handle_devices(factory)
