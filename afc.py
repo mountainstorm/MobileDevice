@@ -229,7 +229,7 @@ class AFC(object):
 	def readlink(self, path):
 		s = self.lstat(path)
 		if not hasattr(s, u'LinkTarget'):
-			raise OSError(u'Path is not slink:', path)
+			raise OSError(u'Path is not symlink:', path)
 		return s.LinkTarget
 
 	def remove(self, path):
