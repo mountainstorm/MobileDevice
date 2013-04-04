@@ -131,6 +131,7 @@ if __name__ == u'__main__':
 		print
 		pprint.pprint(diag.ioregistry())
 		print
+		diag.shutdown()
 		diag.disconnect()
 		return d
 	
