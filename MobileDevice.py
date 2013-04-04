@@ -399,11 +399,27 @@ AMDeviceValidatePairing.argtypes = [AMDeviceRef]
 # TODO: AMDeviceWakeupOperationSchedule
 # TODO: AMDeviceWakeupUsingToken
 
-# TODO: AMDeviceConnectByAddressAndPort (dev, port, &socket)
+AMDeviceConnectByAddressAndPort = MobileDevice._AMDeviceConnectByAddressAndPort
+AMDeviceConnectByAddressAndPort.restype = mach_error_t
+AMDeviceConnectByAddressAndPort.argtypes = [
+	AMDeviceRef, 
+	c_ushort, 
+	POINTER(c_int32)
+]
 
 
+# USBMux* methods
+USBMuxConnectByPort = MobileDevice.USBMuxConnectByPort
+USBMuxConnectByPort.restype = mach_error_t
+USBMuxConnectByPort.argtypes = [
+	c_uint32, 
+	c_ushort, 
+	POINTER(c_int32)
+]
 
-
+USBMuxListenerSetDebug = MobileDevice.USBMuxListenerSetDebug
+USBMuxListenerSetDebug.restype = c_int32
+USBMuxListenerSetDebug.argtypes = [c_int32]
 
 
 

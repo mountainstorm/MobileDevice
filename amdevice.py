@@ -23,14 +23,15 @@
 
 
 from MobileDevice import *
+import socket
 
 
 class AMDevice(object):
 	LOCATION_USB = 1
 
+	INTERFACE_WIFI = 0 # TODO: check this
 	INTERFACE_USB = 1
-	INTERFACE_WIFI = 2 # TODO: check this
-
+	
 	def __init__(self, dev):
 		self.dev = dev
 
@@ -283,7 +284,7 @@ class AMDevice(object):
 		Error:
 		Raises RuntimeError on error
 		''' 
-		sock = c_int()
+		sock = c_int32()
 		if AMDeviceStartServiceWithOptions(
 				self.dev, 
 				service_name, 
@@ -333,7 +334,30 @@ class AMDevice(object):
 		if AMDeviceUnpair(self.dev) != MDERR_OK:
 			raise RuntimeError(u'Unable to unpair device')
 
+	def connect_to_port(self, port):
+		u'''Connects to a listening TCP port on the device.
 
+		Error:
+		Raises RuntimeError on error
+		'''
+		sock = c_int32()
+		# logic taken from _connect_to_port
+		if self.get_interface_type() == AMDevice.INTERFACE_USB:
+			if USBMuxConnectByPort(
+					self.get_usb_deviceid(),
+					socket.htons(port), 
+					byref(sock)
+				) != MDERR_OK:
+				raise RuntimeError(u'Unable to connect to socket via usb')
+		else:
+			# TODO: test!
+			if AMDeviceConnectByAddressAndPort(
+					self.dev, 
+					port, 
+					byref(sock)
+				) != MDERR_OK:
+				raise RuntimeError(u'Unable to connect to socket')
+		return sock.value
 
 
 
@@ -364,6 +388,7 @@ def handle_devices(factory):
 
 if __name__ == u'__main__':
 	import pprint
+	import os
 
 	def factory(dev):
 		d = AMDevice(dev)
@@ -374,9 +399,14 @@ if __name__ == u'__main__':
 		print d.get_interface_type()
 		print d.get_interface_speed()
 		print d.get_deviceid()
-		print "%x" % d.get_location()
+		print u'%x' % d.get_location()
 		print
 		pprint.pprint(d.get_value(u'com.apple.'))
+
+		s = d.connect_to_port(62078)
+		print u'open socket to lockdownd: %d' % s
+		os.close(s)
+
 		return d
 	
 	handle_devices(factory)
