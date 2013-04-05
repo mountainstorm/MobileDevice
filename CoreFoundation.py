@@ -209,6 +209,13 @@ CFDictionaryGetKeysAndValues.argtypes = [
 	POINTER(c_void_p)
 ]
 
+CFDictionaryGetValue = CoreFoundation.CFDictionaryGetValue
+CFDictionaryGetValue.restype = CFTypeRef
+CFDictionaryGetValue.argtypes = [CFDictionaryRef, CFTypeRef]
+
+kCFTypeDictionaryKeyCallBacks = c_void_p.in_dll(CoreFoundation, u'kCFTypeDictionaryKeyCallBacks')
+kCFTypeDictionaryValueCallBacks = c_void_p.in_dll(CoreFoundation, u'kCFTypeDictionaryValueCallBacks')
+
 
 # CFDate
 CFDateRef = c_void_p
@@ -277,6 +284,8 @@ CFArrayCreate = CoreFoundation.CFArrayCreate
 CFArrayCreate.restype = CFArrayRef
 CFArrayCreate.argtypes = [CFAllocatorRef, POINTER(c_void_p), CFIndex, c_void_p]
 
+kCFTypeArrayCallBacks = c_void_p.in_dll(CoreFoundation, u'kCFTypeArrayCallBacks')
+
 
 # CFRunLoop
 CFRunLoopRef = c_void_p
@@ -306,6 +315,15 @@ CFRunLoopGetMain.argtypes = []
 CFRunLoopStop = CoreFoundation.CFRunLoopStop
 CFRunLoopStop.restype = None
 CFRunLoopStop.argtypes = [CFRunLoopRef]
+
+# Util/Debug functions
+CFCopyDescription = CoreFoundation.CFCopyDescription
+CFCopyDescription.restype = CFStringRef
+CFCopyDescription.argtypes = [CFTypeRef]
+
+CFCopyTypeIDDescription = CoreFoundation.CFCopyTypeIDDescription
+CFCopyTypeIDDescription.restype = CFStringRef
+CFCopyTypeIDDescription.argtypes = [CFTypeID]
 
 
 def CFTypeFrom(value):
@@ -347,8 +365,8 @@ def CFTypeFrom(value):
 			(c_void_p * l)(*keys), 
 			(c_void_p * l)(*values), 
 			l,
-			None,
-			None
+			byref(kCFTypeDictionaryKeyCallBacks),
+			byref(kCFTypeDictionaryValueCallBacks)
 		)
 	elif isinstance(value, list):
 		values = []
@@ -358,7 +376,7 @@ def CFTypeFrom(value):
 			None, 
 			(c_void_p * len(values))(*values),
 			len(value),
-			None
+			byref(kCFTypeArrayCallBacks)
 		)
 	elif isinstance(value, datetime.datetime):
 		retval = CFDateCreate(None, value.time()) # TODO: sort out the origin
