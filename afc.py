@@ -275,5 +275,6 @@ class AFC(object):
 
 	def open(self, path, mode):
 		return AFCFile(self.afc_con, path, mode)
+	
 
 
