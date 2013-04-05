@@ -35,7 +35,7 @@ class InstallationProxy(PlistService):
 			kCFPropertyListXMLFormat_v1_0
 		)
 
-	def listapplications(self):
+	def lookup_applications(self):
 		retval = []
 		self._sendmsg({
 			u'Command': u'Browse',
@@ -52,7 +52,38 @@ class InstallationProxy(PlistService):
 			retval.append(reply[u'CurrentList'])
 		return retval
 
-	# TODO: install, upgrade, archive, restore, etc
+	def install_application(self, path, options=None, progress=None):
+		u'''Install an application from the /PublicStaging directory'''
+		self._install_or_upgrade(True, path, options, progress)
+
+	def upgrade_application(self, path, options=None, progress=None):
+		u'''Upgrade an application from the /PublicStaging directory'''
+		self._install_or_upgrade(False, path, options, progress)
+
+	def _install_or_upgrade(self, install, path, options=None, progress=None):
+		def callback(cfdict, arg):
+			pass
+
+		cfpath = CFTypeFrom(path)
+		if options is not None:
+			cfoptions = CFTypeFrom(options)
+		else:
+			cfoptions = CFTypeFrom({
+				u'PackageType': u'Developer'
+			})
+		cb = AFCProgressCallback(callback)
+		if progress is not None:
+			cb = AFCProgressCallback(progress)
+		if install:
+			err = AMDeviceInstallApplication(self.s, cfpath, cfoptions, cb, None)
+		else:
+			err = AMDeviceUpgradeApplication(self.s, cfpath, cfoptions, cb, None)
+		CFRelease(cfpath)
+		CFRelease(cfoptions)
+		if err != MDERR_OK:
+			raise RuntimeError(u'Unable to install application', err)
+
+	# TODO: archive, restore, etc
 
 
 if __name__ == u'__main__':
@@ -62,7 +93,10 @@ if __name__ == u'__main__':
 		d.connect()
 		ip = InstallationProxy(d)
 
-		pprint.pprint(ip.listapplications())
+		#pprint.pprint(ip.lookup_applications())
+		AMDSetLogLevel(0xff)
+		ip.install_application(u'MobileReplayer.app')
+		AMDSetLogLevel(0x0)
 
 		ip.disconnect()
 		return d
