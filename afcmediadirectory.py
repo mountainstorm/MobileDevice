@@ -33,6 +33,33 @@ class AFCMediaDirectory(AFC):
 			raise RuntimeError(u'Unable to launch:', AMSVC_AFC)
 		AFC.__init__(self, s)
 
+def transfer_application(self, path, progress=None):
+		u'''Transfers an application bundle to the device; into the 
+		/PublicStaging directory
+
+		Arguments:
+		path -- the local path to the file to transfer
+		progress -- the callback to get notified of the transfer process
+		            (defaults to none)
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		# Technically you could use this on any AFC connection but it only makes
+		# sense to use it on the MediaDirectory - as it hard coded moves stuff 
+		# to /PublicStaging
+		def callback(cfdict, arg):
+			pass
+
+		cfpath = CFTypeFrom(path)
+		cb = AFCProgressCallback(callback)
+		if progress is not None:
+			cb = AFCProgressCallback(progress)
+		err = AMDeviceTransferApplication(self.s, cfpath, None, cb, None)
+		CFRelease(cfpath)
+		if err != MDERR_OK:
+			raise RuntimeError(u'Unable to transfer application')
+
 
 if __name__ == u'__main__':
 	import sys
@@ -50,6 +77,11 @@ if __name__ == u'__main__':
 		d = AMDevice(dev)
 		d.connect()
 		afc = AFCMediaDirectory(d)
+		printdir(afc, u'/') # recursive print of all files visible
+
+		AMDSetLogLevel(0xff)
+		afc.transfer_application(u'/Users/cooper/Documents/Dev/iOS/DeveloperDiskImg/Applications/MobileReplayer.app')
+		AMDSetLogLevel(0x0)
 
 		printdir(afc, u'/') # recursive print of all files visible
 
