@@ -31,6 +31,7 @@ class PlistService(object):
 	def __init__(self, amdevice, servicenames, format=kCFPropertyListBinaryFormat_v1_0):
 		self.format = format
 		self.s = None
+		self.dev = amdevice
 		for name in servicenames:
 			self.s = amdevice.start_service(name)
 			if self.s is not None:
