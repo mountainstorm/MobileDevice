@@ -137,6 +137,9 @@ AMDeviceNotificationCallback = CFUNCTYPE(
 AMDDeviceAttatchedCallback = c_void_p
 
 
+AMDeviceProgressCallback = CFUNCTYPE(None, CFDictionaryRef, c_int)
+
+
 class AMRecoveryDevice(Structure):
 	pass
 
@@ -272,7 +275,15 @@ AMDeviceGetWirelessBuddyFlags = MobileDevice.AMDeviceGetWirelessBuddyFlags
 AMDeviceGetWirelessBuddyFlags.restype = mach_error_t
 AMDeviceGetWirelessBuddyFlags.argtypes = [AMDeviceRef, POINTER(CFTypeRef)]
 
-# TODO: AMDeviceInstallApplication
+AMDeviceInstallApplication = MobileDevice.AMDeviceInstallApplication
+AMDeviceInstallApplication.restype = mach_error_t
+AMDeviceInstallApplication.argtypes = [
+	c_uint32, 
+	CFStringRef, 
+	CFDictionaryRef, 
+	AMDeviceProgressCallback, 
+	c_void_p
+]
 
 # AMDeviceInstallPackage - appears to be legacy install (uses Nikita)
 
@@ -287,7 +298,15 @@ AMDeviceIsPaired.argtypes = [AMDeviceRef]
 # AMDeviceLookupApplicationArchives - legacy version of AMDeviceLookupApplications
 # AMDeviceLookupApplications - sends Browse to installation_proxy; we do directly
 
-# TODO: AMDeviceMountImage - mounts an image directly
+AMDeviceMountImage = MobileDevice.AMDeviceMountImage
+AMDeviceMountImage.restype = mach_error_t
+AMDeviceMountImage.argtypes = [
+	AMDeviceRef, 
+	CFStringRef, 
+	CFDictionaryRef, 
+	AMDeviceProgressCallback, 
+	c_void_p
+]
 
 AMDeviceNotificationSubscribe = MobileDevice.AMDeviceNotificationSubscribe
 AMDeviceNotificationSubscribe.restype = mach_error_t
@@ -365,7 +384,16 @@ AMDeviceStopSession = MobileDevice.AMDeviceStopSession
 AMDeviceStopSession.restype = mach_error_t
 AMDeviceStopSession.argtypes = [AMDeviceRef]
 
-# TODO: AMDeviceTransferApplication
+AMDeviceTransferApplication = MobileDevice.AMDeviceTransferApplication
+AMDeviceTransferApplication.restype = mach_error_t
+AMDeviceTransferApplication.argtypes = [
+	c_int32, 
+	CFStringRef, 
+	c_void_p, 
+	AMDeviceProgressCallback, 
+	c_void_p
+]
+
 # TODO: AMDeviceTransferPath
 
 AMDeviceUSBDeviceID = MobileDevice.AMDeviceUSBDeviceID
@@ -385,7 +413,15 @@ AMDeviceUnpair = MobileDevice.AMDeviceUnpair
 AMDeviceUnpair.restype = mach_error_t
 AMDeviceUnpair.argtypes = [AMDeviceRef]
 
-# TODO: AMDeviceUpgradeApplication
+AMDeviceUpgradeApplication = MobileDevice.AMDeviceUpgradeApplication
+AMDeviceUpgradeApplication.restype = mach_error_t
+AMDeviceUpgradeApplication.argtypes = [
+	c_uint32, 
+	CFStringRef, 
+	CFDictionaryRef, 
+	AMDeviceProgressCallback, 
+	c_void_p
+]
 
 AMDeviceValidatePairing = MobileDevice.AMDeviceValidatePairing
 AMDeviceValidatePairing.restype = mach_error_t
@@ -406,6 +442,12 @@ AMDeviceConnectByAddressAndPort.argtypes = [
 	c_ushort, 
 	POINTER(c_int32)
 ]
+
+
+#AMD* methods
+AMDSetLogLevel = MobileDevice.AMDSetLogLevel
+AMDSetLogLevel.restype = c_int
+AMDSetLogLevel.argtypes = [c_int]
 
 
 # USBMux* methods
