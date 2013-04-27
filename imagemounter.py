@@ -84,11 +84,10 @@ class ImageMounter(object):
 		sig = f.read()
 		f.close()
 
-		cfsig = CFTypeFrom(sig)
 		cfpath = CFTypeFrom(image_path)
 		cfoptions = CFTypeFrom({
 			u'ImageType': u'Developer',
-			u'ImageSignature': cfsig
+			u'ImageSignature': sig
 		})
 
 		cb = AMDeviceProgressCallback(callback)
