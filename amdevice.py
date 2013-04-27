@@ -27,12 +27,35 @@ import socket
 
 
 class AMDevice(object):
-	LOCATION_USB = 1
+	u'''Represents a Apple Mobile Device; providing a wrapping around the raw
+	MobileDeviceAPI.
+	'''
 
-	INTERFACE_WIFI = 0 # TODO: check this
+	# XXX add recovery mode features - move them into anoher file
+
+	INTERFACE_WIFI = 0 # XXX check this
 	INTERFACE_USB = 1
+
+	BUDDY_SETID = 0x1
+	BUDDY_WIFI = 0x2
+
+	value_domains = [
+		u'com.apple.mobile.battery',
+		u'com.apple.mobile.iTunes',
+		u'com.apple.mobile.data_sync',
+		u'com.apple.mobile.sync_data_class',
+		u'com.apple.mobile.wireless_lockdown',
+		u'com.apple.mobile.internal',
+		u'com.apple.mobile.chaperone'
+	]
+
 	
 	def __init__(self, dev):
+		u'''Initializes a AMDevice object
+
+		Arguments:
+		dev -- the device returned by MobileDeviceAPI
+		'''
 		self.dev = dev
 
 	def activate(self, activation_record):
@@ -61,7 +84,8 @@ class AMDevice(object):
 			raise RuntimeError(u'Unable to connect to device')
 
 		if AMDeviceIsPaired(self.dev) != 1:
-			raise RuntimeError(u'If your phone is locked with a passcode, unlock then reconnect it')
+			if AMDevicePair(self.dev) != MDERR_OK:
+				raise RuntimeError(u'If your phone is locked with a passcode, unlock then reconnect it')
 
 		if AMDeviceValidatePairing(self.dev) != MDERR_OK: 
 			raise RuntimeError(u'Unable to validate pairing')
@@ -91,7 +115,7 @@ class AMDevice(object):
 		(see get_interface_type)
 
 		Return:
-		On success, a AMDevice.LOCATION_* value on success
+		On success, a location value e.g. the USB location ID
 
 		Error:
 		Raises RuntimeError on error		
@@ -119,8 +143,8 @@ class AMDevice(object):
 		Error:
 		Raises RuntimeError on error
 
-		TODO:
-		Figure out valid domains
+		Domains:
+		AMDevice.value_domains
 		'''
 		retval = None
 		cfdomain = None
@@ -159,7 +183,7 @@ class AMDevice(object):
 			self.dev = None
 
 	def enter_recovery_mode(self):
-		u'''Puts the device inot recovery mode
+		u'''Puts the device into recovery mode
 
 		Error:
 		Raises RuntimeError on error'''
@@ -182,17 +206,20 @@ class AMDevice(object):
 			retval = None
 		return retval
 
-	def get_wireless_buddyid(self):
-		u'''Retrieve the wireless buddy id; Probably used to do wifi sync
+	def get_wireless_buddyflags(self):
+		u'''Retrieve the wireless buddy flags; Probably used to do wifi sync
 
 		Error:
 		Raises a RuntimeError on error
 		'''
 		retval = None
-		obj = CFTypeRef()
+		obj = c_long()
 		if AMDeviceGetWirelessBuddyFlags(self.dev, byref(obj)) != MDERR_OK:
-			raise RuntimeError(u'Unable to get wireless buddy id')
-		return CFTypeTo(obj)
+			raise RuntimeError(u'Unable to get wireless buddy flags')
+
+		if obj is not None:
+			retval = obj.value
+		return retval
 
 	def remove_value(self, domain, name):
 		u'''Removes a value from the device
@@ -253,11 +280,11 @@ class AMDevice(object):
 		if retval != MDERR_OK:
 			raise RuntimeError(u'Unable to set value %s/%s' % (domain, name, value))
 
-	def set_wireless_buddyid(self, enable_wifi=True, setid=True):
-		u'''Sets the wireless buddyid from iTunes, and optionally enables wifi
+	def set_wireless_buddyflags(self, enable_wifi=True, setid=True):
+		u'''Sets the wireless buddy flags, and optionally enables wifi
 
 		Arguments:
-		enable_wifi -- turns on/off wifi if there a buddy id (default True)
+		enable_wifi -- turns on/off wifi  (default True)
 		setid -- if true, sets buddy id (default True)
 
 		Error:
@@ -265,9 +292,9 @@ class AMDevice(object):
 		'''
 		flags = 0
 		if enable_wifi:
-			flags |= 0x2
+			flags |= AMDevice.BUDDY_WIFI
 		if setid:
-			flags |= 0x1
+			flags |= AMDevice.BUDDY_SETID
 		if AMDeviceSetWirelessBuddyFlags(self.dev, flags) != MDERR_OK:
 			raise RuntimeError(u'Unable to set buddy id flags', enable_wifi, setid)
 
@@ -362,6 +389,26 @@ class AMDevice(object):
 
 
 def handle_devices(factory):
+	u'''Waits indefinatly handling devices arrival/removal events.
+	
+	Upon arrival the factory function will be called; providing the device as 
+	a param.  This method should return an object on success, None on error.
+	When the device is removed your object will have 'disconnect' called upon it
+
+	Typical Example:
+	def factory(dev):
+		d = AMDevice(dev)
+		d.connect()
+		pprint.pprint(d.get_value())
+		return d
+
+	Arguments:
+	factory - the callback function, called on device arrival
+
+	Error:
+	Raises a RuntimeError on error
+	'''
+	# XXX: what do I need to release
 	devices = {}
 
 	def cbFunc(info, cookie):
@@ -379,38 +426,253 @@ def handle_devices(factory):
 	if err != MDERR_OK:
 		raise RuntimeError(u'Unable to subscribe for notifications')
 
+	# loop so we can exit easily
 	while CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, False) == kCFRunLoopRunTimedOut:
 		pass
 
 	AMDeviceNotificationUnsubscribe(notify)
 
 
+def list_devices(waittime=0.1):
+	u'''Returns a dictionary of AMDevice objects, indexed by device id, 
+	currently connected; waiting at least waittime for them to be discovered.
+
+	Arguments:
+	waittime - time to wait for devices to be discovered (default 0.1 seconds)
+	'''
+	# XXX: what do I need to release
+	devices = {}
+
+	def cbFunc(info, cookie):
+		info = info.contents
+		if info.message == ADNCI_MSG_CONNECTED:
+			devices[info.device] = AMDevice(info.device)
+
+	notify = AMDeviceNotificationRef()
+	notifyFunc = AMDeviceNotificationCallback(cbFunc)
+	err = AMDeviceNotificationSubscribe(notifyFunc, 0, 0, 0, byref(notify))
+	if err != MDERR_OK:
+		raise RuntimeError(u'Unable to subscribe for notifications')
+
+	CFRunLoopRunInMode(kCFRunLoopDefaultMode, waittime, False)
+	AMDeviceNotificationUnsubscribe(notify)
+	return devices
+
 
 if __name__ == u'__main__':
 	import pprint
 	import os
+	import sys
+	import argparse
 
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		pprint.pprint(d.get_value())
-		print d.get_usb_deviceid()
-		print d.get_usb_productid()
-		print d.get_interface_type()
-		print d.get_interface_speed()
-		print d.get_deviceid()
-		print u'%x' % d.get_location()
-		print
-		pprint.pprint(d.get_value(u'com.apple.'))
+	#	s = d.connect_to_port(62078)
+	#	print u'open socket to lockdownd: %d' % s
+	#	os.close(s)
 
-		s = d.connect_to_port(62078)
-		print u'open socket to lockdownd: %d' % s
-		os.close(s)
 
-		return d
+	class CmdArguments(object):
+		def __init__(self):
+			self._devs = list_devices()
+			for v in self._devs.values():
+				v.connect()
+
+			self._parser = argparse.ArgumentParser()
+
+			self._parser.add_argument(
+				u'-d', 
+				metavar=u'DEVID',
+				dest=u'device_idx',
+				choices=range(len(self._devs.keys())),
+				type=int,
+				action=u'append',
+				help=u'only operate on the specified device'
+			)
+			
+			# add subparsers for commands
+			self._subparsers = self._parser.add_subparsers(
+				help=u'sub-command help; use <cmd> -h for help on sub commands'
+			)
+			
+			# add listing command
+			listparser = self._subparsers.add_parser(
+				u'list', 
+				help=u'list all attached devices'
+			)
+			listparser.set_defaults(listing=True)
+
+
+		def __del__(self):
+			for v in self._devs.values():
+				v.disconnect()
+
+		def add_parser(self, *args, **kwargs):
+			return self._subparsers.add_parser(*args, **kwargs)
+
+		def parse_args(self):
+			args = self._parser.parse_args(namespace=self)
+			i = 0
+			if u'listing' in dir(self):
+				sys.stdout.write(self._print_devices())
+
+			else:
+				for k in sorted(self._devs.keys()):
+					v = self._devs[k]
+					if self.device_idx is None or i in self.device_idx:
+						name = v.get_value(name=u'DeviceName')
+						print(u'%u: %s - "%s"' % (
+							i, 
+							v.get_deviceid(), 
+							name.decode(u'utf-8')
+						))
+						args.func(args, v)
+					i += 1
+
+		def _print_devices(self):
+			retval = u'device list:\n'
+			i = 0
+			for k in sorted(self._devs.keys()):
+				v = self._devs[k]
+				try:
+					name = v.get_value(name=u'DeviceName')
+					retval += u'  %u: %s - "%s"\n' % (
+						i, 
+						v.get_deviceid(), 
+						name.decode(u'utf-8')
+					)
+				except:
+					retval += u'  %u: %s\n' % (i, k)
+				i = i + 1
+			retval += u' \n'
+			return retval			
+
+
+	cmdargs = CmdArguments()
 	
-	handle_devices(factory)
+	# standard dev commands
+	devparser = cmdargs.add_parser(
+		u'dev', 
+		help=u'commands related to the device'
+	)
 
+	def get_number_in_units(size,precision=2):
+		suffixes = [u'b', u'kb', u'mb', u'gb']
+		suffixIndex = 0
+		while size > 1024:
+			suffixIndex += 1 #increment the index of the suffix
+			size = size / 1024.0 #apply the division
+		return u'%.*f%s' % (precision,size,suffixes[suffixIndex])
+
+	def cmd_info(args, dev):
+		iface_types = {
+			AMDevice.INTERFACE_USB: u'USB',
+			AMDevice.INTERFACE_WIFI: u'WIFI'
+		}
+		print(u'  identifier: %s' % dev.get_deviceid())
+		print(u'  interface type: %s' % iface_types[dev.get_interface_type()])
+		print(u'  interface speed: %sps' % 
+			get_number_in_units(int(dev.get_interface_speed()))
+		)
+		print(u'  location: 0x%x' % dev.get_location())
+		print(u'  usb device id: 0x%x' % dev.get_usb_deviceid())
+		print(u'  usb product id: 0x%x' % dev.get_usb_productid())
+		print(u'')
+		
+	def cmd_get(args, dev):
+		if args.domain is not None or args.key is not None:
+			key = None
+			if args.key is not None:
+				key = args.key.decode(u'utf-8')
+
+			domain = None
+			if args.domain is not None:
+				domain = args.domain[0].decode(u'utf-8')
+			pprint.pprint(dev.get_value(domain, key))
+		else:
+			# enumerate all the value_domains
+			output = {}
+			output[None] = dev.get_value()
+			for domain in AMDevice.value_domains:
+				output[domain] = dev.get_value(domain)
+			pprint.pprint(output)
+		print(u'')
+
+	def cmd_unpair(args, dev):
+		dev.unpair()
+
+	def cmd_buddy(args, dev):
+		if args.wifi is not None or args.setid is not None:
+			dev.set_wireless_buddyflags(args.wifi, args.setid)
+		else:
+			flags = dev.get_wireless_buddyflags()
+			s = u''
+			if flags & AMDevice.BUDDY_WIFI:
+				s += u'BUDDY_WIFI'
+			if flags & AMDevice.BUDDY_SETID:
+				if len(s) != 0:
+					s += u' | '
+				s += u'BUDDY_SETID'
+			s += u' (0x%x)' % flags
+			print(u'  wireless buddy flags: %s' % s)
+
+	# device info
+	devcmds = devparser.add_subparsers()
+	infocmd = devcmds.add_parser(
+		u'info', 
+		help=u'display basic info about the device'
+	)
+	infocmd.set_defaults(func=cmd_info)
+
+	# get value
+	getcmd = devcmds.add_parser(
+		u'get', 
+		help=u'display key/value info about the device'
+	)
+	getcmd.add_argument(
+		u'key', 
+		nargs=u'?',
+		help=u'the key of the value to get'
+	)
+	getcmd.add_argument(
+		u'-d', 
+		metavar=u'domain', 
+		dest=u'domain', 
+		action=u'append',
+		help=u'the domain of the keys to get'
+	)
+	getcmd.set_defaults(func=cmd_get)
+
+	# unpair
+	unpaircmd = devcmds.add_parser(
+		u'unpair',
+		help=u'unpair the device from this host'
+	)
+	unpaircmd.set_defaults(func=cmd_unpair)
+
+	# set buddy id
+	buddycmd = devcmds.add_parser(
+		u'buddy',
+		help=u'get/set wireless buddy parameters'
+	)
+	buddycmd.add_argument(
+		u'-w', 
+		help=u'enable wifi (0 or 1)', 
+		dest=u'wifi', 
+		type=int,
+		choices=(0, 1)
+	)
+	buddycmd.add_argument(
+		u'-s', 
+		help=u'sets buddy id (0 or 1)', 
+		dest=u'setid',
+		type=int,		
+		choices=(0, 1)
+	)
+	buddycmd.set_defaults(func=cmd_buddy)
+
+	# XXX set/remove value
+	# XXX activate, deactivate - do we really want to be able to do these?
+
+	cmdargs.parse_args()
 
 
 
