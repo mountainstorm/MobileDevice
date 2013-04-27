@@ -273,7 +273,7 @@ AMDeviceGetName.argtypes = [AMDeviceRef]
 
 AMDeviceGetWirelessBuddyFlags = MobileDevice.AMDeviceGetWirelessBuddyFlags
 AMDeviceGetWirelessBuddyFlags.restype = mach_error_t
-AMDeviceGetWirelessBuddyFlags.argtypes = [AMDeviceRef, POINTER(CFTypeRef)]
+AMDeviceGetWirelessBuddyFlags.argtypes = [AMDeviceRef, POINTER(c_long)]
 
 AMDeviceInstallApplication = MobileDevice.AMDeviceInstallApplication
 AMDeviceInstallApplication.restype = mach_error_t
@@ -322,7 +322,10 @@ AMDeviceNotificationUnsubscribe = MobileDevice.AMDeviceNotificationUnsubscribe
 AMDeviceNotificationUnsubscribe.restype = mach_error_t
 AMDeviceNotificationUnsubscribe.argtypes = [AMDeviceNotificationRef]
 
-# AMDevicePair - not needed
+AMDevicePair = MobileDevice.AMDevicePair
+AMDevicePair.restype = mach_error_t
+AMDevicePair.argtypes = [AMDeviceNotificationRef]
+
 # AMDevicePairWithOptions - not needed
 # AMDevicePreflightOperationCreate - no idea
 # AMDevicePreflightOperationGetRunLoopSource - no idea
