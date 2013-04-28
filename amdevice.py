@@ -459,95 +459,10 @@ def list_devices(waittime=0.1):
 	return devices
 
 
-if __name__ == u'__main__':
-	import pprint
-	import os
-	import sys
+def register_argparse_dev(cmdargs):
 	import argparse
+	import pprint
 
-	#	s = d.connect_to_port(62078)
-	#	print u'open socket to lockdownd: %d' % s
-	#	os.close(s)
-
-
-	class CmdArguments(object):
-		def __init__(self):
-			self._devs = list_devices()
-			for v in self._devs.values():
-				v.connect()
-
-			self._parser = argparse.ArgumentParser()
-
-			self._parser.add_argument(
-				u'-d', 
-				metavar=u'DEVID',
-				dest=u'device_idx',
-				choices=range(len(self._devs.keys())),
-				type=int,
-				action=u'append',
-				help=u'only operate on the specified device'
-			)
-			
-			# add subparsers for commands
-			self._subparsers = self._parser.add_subparsers(
-				help=u'sub-command help; use <cmd> -h for help on sub commands'
-			)
-			
-			# add listing command
-			listparser = self._subparsers.add_parser(
-				u'list', 
-				help=u'list all attached devices'
-			)
-			listparser.set_defaults(listing=True)
-
-
-		def __del__(self):
-			for v in self._devs.values():
-				v.disconnect()
-
-		def add_parser(self, *args, **kwargs):
-			return self._subparsers.add_parser(*args, **kwargs)
-
-		def parse_args(self):
-			args = self._parser.parse_args(namespace=self)
-			i = 0
-			if u'listing' in dir(self):
-				sys.stdout.write(self._print_devices())
-
-			else:
-				for k in sorted(self._devs.keys()):
-					v = self._devs[k]
-					if self.device_idx is None or i in self.device_idx:
-						name = v.get_value(name=u'DeviceName')
-						print(u'%u: %s - "%s"' % (
-							i, 
-							v.get_deviceid(), 
-							name.decode(u'utf-8')
-						))
-						args.func(args, v)
-					i += 1
-
-		def _print_devices(self):
-			retval = u'device list:\n'
-			i = 0
-			for k in sorted(self._devs.keys()):
-				v = self._devs[k]
-				try:
-					name = v.get_value(name=u'DeviceName')
-					retval += u'  %u: %s - "%s"\n' % (
-						i, 
-						v.get_deviceid(), 
-						name.decode(u'utf-8')
-					)
-				except:
-					retval += u'  %u: %s\n' % (i, k)
-				i = i + 1
-			retval += u' \n'
-			return retval			
-
-
-	cmdargs = CmdArguments()
-	
 	# standard dev commands
 	devparser = cmdargs.add_parser(
 		u'dev', 
@@ -575,7 +490,6 @@ if __name__ == u'__main__':
 		print(u'  location: 0x%x' % dev.get_location())
 		print(u'  usb device id: 0x%x' % dev.get_usb_deviceid())
 		print(u'  usb product id: 0x%x' % dev.get_usb_productid())
-		print(u'')
 		
 	def cmd_get(args, dev):
 		if args.domain is not None or args.key is not None:
@@ -594,7 +508,6 @@ if __name__ == u'__main__':
 			for domain in AMDevice.value_domains:
 				output[domain] = dev.get_value(domain)
 			pprint.pprint(output)
-		print(u'')
 
 	def cmd_unpair(args, dev):
 		dev.unpair()
@@ -671,9 +584,4 @@ if __name__ == u'__main__':
 
 	# XXX set/remove value
 	# XXX activate, deactivate - do we really want to be able to do these?
-
-	cmdargs.parse_args()
-
-
-
 
