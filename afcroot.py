@@ -28,7 +28,7 @@ from afc import *
 
 class AFCRoot(AFC):
 	def __init__(self, amdevice):
-		s = amdevice.start_service(u'com.apple.afc2')
+		s = amdevice.start_service(CFSTR(u'com.apple.afc2'))
 		if s is None:
 			raise RuntimeError(u'Unable to launch:', u'com.apple.afc2')
 		AFC.__init__(self, s)
@@ -51,7 +51,7 @@ if __name__ == u'__main__':
 		d.connect()
 		afc = AFCRoot(d)
 
-		printdir(afc, u'/') # recursive print of all files visible
+		printdir(afc, u'/System/Library/Caches/') # recursive print of all files visible
 
 		afc.disconnect()
 		return d
