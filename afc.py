@@ -69,7 +69,7 @@ def _stat_from_afcdict(afcdict):
 
 
 class AFCFile(object):
-	# TODO: creation, read, write, seek tell etc
+	# XXX creation, read, write, seek tell etc
 	def __init__(self, afc_con, path, mode):
 		self.afc_con = afc_con
 		self.mode = 0
@@ -215,7 +215,7 @@ class AFC(object):
 			path = name.value.decode(u'utf-8')
 			if path != u'.' and path != u'..':
 				retval.append(path)
-		# TODO: do we need to free buffer on error
+		# XXX do we need to free buffer on error
 		AFCDirectoryClose(self.afc_con, afc_dir)
 		return retval
 
@@ -275,6 +275,5 @@ class AFC(object):
 
 	def open(self, path, mode):
 		return AFCFile(self.afc_con, path, mode)
-	
 
 
