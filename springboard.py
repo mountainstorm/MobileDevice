@@ -79,7 +79,7 @@ if __name__ == u'__main__':
 		d.connect()
 		sb = Springboard(d)
 
-		#pprint.pprint(sb.get_iconstate())
+		pprint.pprint(sb.get_iconstate())
 		#pprint.pprint(sb.get_iconpngdata(u'com.apple.mobilephone'))
 		print sb.get_interface_orientation()
 
