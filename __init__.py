@@ -26,6 +26,7 @@
 as a submodule in git
 """
 
+from afc import *
 from afcapplicationdirectory import *
 from afccrashlogdirectory import *
 from afcmediadirectory import *
@@ -33,6 +34,7 @@ from afcroot import *
 from amdevice import *
 from diagnostics import *
 from installationproxy import *
+from imagemounter import *
 from springboard import *
 from filerelay import *
 from syslog import *
