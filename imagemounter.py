@@ -51,12 +51,13 @@ class ImageMounter(object):
 			home, 
 			u'/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/'
 		)
-		print u'%s %s' % (version, build)
+		#print u'%s %s' % (version, build)
 		path = ds + u'%s (%s)/DeveloperDiskImage.dmg' % (version, build)
 		if not os.path.exists(path):
 			# try it without the build no
 			path = ds + u'%s/DeveloperDiskImage.dmg' % (version)
 			if not os.path.exists(path):
+				# XXX perhaps add support for finding the next best image
 				raise RuntimeError(u'Unable to find developer disk image')
 		return path
 
@@ -96,24 +97,49 @@ class ImageMounter(object):
 		err = AMDeviceMountImage(self.dev.dev, cfpath, cfoptions, cb, None)
 		CFRelease(cfpath)
 		CFRelease(cfoptions)
-		CFRelease(cfsig)
 		if err != MDERR_OK:
 			raise RuntimeError(u'Unable to mount disk image', err)
 
 
-if __name__ == u'__main__':
+def register_argparse_mount(cmdargs):
+	import argparse
+	import pprint
 	import sys
 
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		im = ImageMounter(d)
-
-		AMDSetLogLevel(0xff)
-		im.mount(u'/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/6.0 (10A403)/DeveloperDiskImage.dmg')
-
+	def cmd_mountdev(args, dev):
+		im = ImageMounter(dev)
+		im.mount()
 		im.disconnect()
-		return d
-	
-	handle_devices(factory)
+
+	def cmd_mountcustom(args, dev):
+		im = ImageMounter(dev)
+		im.mount(args.path.decode(u'utf-8'))
+		im.disconnect()		
+
+	mountparser = cmdargs.add_parser(
+		u'mount',
+		help=u'mounts a disk image'
+	)
+	mountcmds = mountparser.add_subparsers()
+
+	# mount developer disk image
+	devcmd = mountcmds.add_parser(
+		u'dev',
+		help=u'mounts the best developer disk image avaliable for the device'
+	)
+	devcmd.set_defaults(func=cmd_mountdev)
+
+	# mount custom disk image
+	cuscmd = mountcmds.add_parser(
+		u'custom',
+		help=u'mounts the supplied disk image; .signature file must be alongside'
+	)
+	cuscmd.add_argument(
+		u'path',
+		help=u'the path to the .dmg; we expect a .signature alongside'
+	)
+	cuscmd.set_defaults(func=cmd_mountcustom)
+
+
+#'/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/6.0 (10A403)/DeveloperDiskImage.dmg'
 
