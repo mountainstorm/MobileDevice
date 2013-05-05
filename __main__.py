@@ -85,7 +85,11 @@ if __name__ == u'__main__':
 						self.device_idx = 0 # default to first device
 					k = sorted(self._devs.keys())[self.device_idx]
 					v = self._devs[k]
-					name = v.get_value(name=u'DeviceName')
+					name = u''
+					try:
+						name = v.get_value(name=u'DeviceName')
+					except:
+						pass
 					print(u'%u: %s - "%s"' % (
 						self.device_idx, 
 						v.get_deviceid(), 
