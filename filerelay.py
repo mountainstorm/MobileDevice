@@ -29,6 +29,20 @@ import os
 
 
 class FileRelay(PlistService):
+	u'''Provides access to the file relay service; allowing you to retrive 
+	filesets from the device in cpio.gz format'''
+
+	filesets = [
+		u'AppleSupport',
+		u'Network',
+		u'VPN',
+		u'WiFi',
+		u'UserDatabases',
+		u'CrashReporter',
+		u'tmp',
+		u'SystemConfiguration'
+	]
+
 	def __init__(self, amdevice):
 		PlistService.__init__(
 			self,
@@ -37,51 +51,60 @@ class FileRelay(PlistService):
 			kCFPropertyListXMLFormat_v1_0
 		)
 
-	# AppleSupport
-	# Network
-	# VPN
-	# WiFi
-	# UserDatabases
-	# CrashReporter
-	# tmp
-	# SystemConfiguration
-	# returns a .cpio.gz file with the contents
 	def get_filesets(self, sources):
-		retval = False
+		u'''retrieves the fileset/sets specified in sources; returns the data
+		in cpio.gz format
+
+		Arguments:
+		sources -- an array of source names
+		'''
 		self._sendmsg({u'Sources': sources})
 		reply = self._recvmsg()
 		if u'Status' in reply and reply[u'Status'] == u'Acknowledged':
 			# now read the cpio.gz file it returns
 			retval = ''
 			while True:
-				data = os.read(fr.s, 1024)
+				data = os.read(self.s, 1024)
 				if data is None or len(data) == 0:
 					break
 				retval += data
+		else:
+			raise RuntimeError(u'Unable to retrieve filesets: %s' % reply)
 		return retval
 
 
-if __name__ == u'__main__':
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		fr = FileRelay(d)
+def register_argparse_filerelay(cmdargs):
+	import argparse
+	import sys
 
-		f = open(u'dump.cpio.gz', 'wb')
-		f.write(fr.get_filesets([
-			u'AppleSupport',
-			u'Network',
-			u'VPN',
-			u'WiFi',
-			u'UserDatabases',
-			u'CrashReporter',
-			u'tmp',
-			u'SystemConfiguration'
-		]))
+	def cmd_filerelay(args, dev):
+		fr = FileRelay(dev)
+
+		sets = FileRelay.filesets
+		if args.s is not None:
+			sets = []
+			for s in args.s:
+				sets.append(s.decode(u'utf-8'))
+		f = open(args.dest.decode(u'utf-8'), 'wb')
+		f.write(fr.get_filesets(sets))
 		f.close()
 
 		fr.disconnect()
-		return d
-	
-	handle_devices(factory)
+
+	# filerelay command
+	filerelaycmd = cmdargs.add_parser(
+		u'filerelay', 
+		help=u'retrieves filesets from the device in .cpio.gz format'
+	)
+	filerelaycmd.add_argument(
+		u'-s',
+		metavar=u'setname',
+		action=u'append',
+		help=u'the set name to retrieve; if no -s options are specified it retrieves all sets'
+	)
+	filerelaycmd.add_argument(
+		u'dest',
+		help=u'destination filename; should really end in .cpio.gz'
+	)
+	filerelaycmd.set_defaults(func=cmd_filerelay)
 
