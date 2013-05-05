@@ -48,7 +48,6 @@ class AMDevice(object):
 		u'com.apple.mobile.internal',
 		u'com.apple.mobile.chaperone'
 	]
-
 	
 	def __init__(self, dev):
 		u'''Initializes a AMDevice object
@@ -225,10 +224,9 @@ class AMDevice(object):
 		u'''Removes a value from the device
 
 		Arguments:
-		domain -- the domain to retrieve, or None to retrieve default domain
+		domain -- the domain to work in, or None to use the default domain
 		          (default None)
-		name -- the name of the value to retrieve, or None to retrieve all 
-		        (default None)
+		name -- the name of the value to delete
 
 		Error:
 		Raises RuntimeError on error
@@ -244,9 +242,6 @@ class AMDevice(object):
 			CFRelease(cfdomain)
 		if cfname is not None:
 			CFRelease(cfname)
-		if value is not None:
-			retval = CFTypeTo(value)
-			CFRelease(value)
 		if retval != MDERR_OK:
 			raise RuntimeError(u'Unable to remove value %s/%s' % (domain, name))
 
@@ -254,10 +249,10 @@ class AMDevice(object):
 		u'''Sets a value on the device
 
 		Arguments:
-		domain -- the domain to retrieve, or None to retrieve default domain
+		domain -- the domain to set in, or None to use the default domain
 		          (default None)
-		name -- the name of the value to retrieve, or None to retrieve all 
-		        (default None)
+		name -- the name of the value to set
+		value -- the value to set
 
 		Error:
 		Raises RuntimeError on error
@@ -270,7 +265,7 @@ class AMDevice(object):
 			cfname = CFTypeFrom(name)
 		if value is not None:
 			cfvalue = CFTypeFrom(value)
-		retval = AMDeviceRemoveValue(self.dev, cfdomain, cfname, cfvalue)
+		retval = AMDeviceSetValue(self.dev, cfdomain, cfname, cfvalue)
 		if cfdomain is not None: 
 			CFRelease(cfdomain)
 		if cfname is not None:
@@ -298,6 +293,7 @@ class AMDevice(object):
 		if AMDeviceSetWirelessBuddyFlags(self.dev, flags) != MDERR_OK:
 			raise RuntimeError(u'Unable to set buddy id flags', enable_wifi, setid)
 
+	# XXX change api so start_service takes a python string and convert
 	def start_service(self, service_name, options=None):
 		u'''Starts the service and returns the socket
 
@@ -377,7 +373,7 @@ class AMDevice(object):
 				) != MDERR_OK:
 				raise RuntimeError(u'Unable to connect to socket via usb')
 		else:
-			# TODO: test!
+			# XXX test!
 			if AMDeviceConnectByAddressAndPort(
 					self.dev, 
 					port, 
@@ -463,12 +459,6 @@ def register_argparse_dev(cmdargs):
 	import argparse
 	import pprint
 
-	# standard dev commands
-	devparser = cmdargs.add_parser(
-		u'dev', 
-		help=u'commands related to the device'
-	)
-
 	def get_number_in_units(size,precision=2):
 		suffixes = [u'b', u'kb', u'mb', u'gb']
 		suffixIndex = 0
@@ -499,8 +489,11 @@ def register_argparse_dev(cmdargs):
 
 			domain = None
 			if args.domain is not None:
-				domain = args.domain[0].decode(u'utf-8')
-			pprint.pprint(dev.get_value(domain, key))
+				domain = args.domain.decode(u'utf-8')
+			try:
+				pprint.pprint(dev.get_value(domain, key))
+			except:
+				pass
 		else:
 			# enumerate all the value_domains
 			output = {}
@@ -508,6 +501,18 @@ def register_argparse_dev(cmdargs):
 			for domain in AMDevice.value_domains:
 				output[domain] = dev.get_value(domain)
 			pprint.pprint(output)
+
+	def cmd_set(args, dev):
+		domain = None
+		if args.domain is not None:
+			domain = args.domain.decode(u'utf-8')
+		dev.set_value(domain, args.key.decode(u'utf-8'), args.value.decode(u'utf-8'))
+
+	def cmd_del(args, dev):
+		domain = None
+		if args.domain is not None:
+			domain = args.domain.decode(u'utf-8')
+		dev.remove_value(domain, args.key.decode(u'utf-8'))
 
 	def cmd_unpair(args, dev):
 		dev.unpair()
@@ -526,6 +531,32 @@ def register_argparse_dev(cmdargs):
 				s += u'BUDDY_SETID'
 			s += u' (0x%x)' % flags
 			print(u'  wireless buddy flags: %s' % s)
+
+	def cmd_relay(args, dev):
+		pairs = getattr(args, u'port:pair')
+		relays = []
+		# check arguments
+		try:
+			for pair in pairs:
+				src, dst = pair.split(u':')
+				src = int(src)
+				dst = int(dst)
+				relays.append((src, dst))
+		except:
+			print(u'dev relay: error: invalid port pair - %s' % pair)
+			return
+
+		# for each pair spin up a relay instance
+		argents = []
+		for relay in relays:
+			print(u'relaying traffic from local port %u to device port %u' % (relay[0], relay[1]))
+			pass # XXX
+
+	# standard dev commands
+	devparser = cmdargs.add_parser(
+		u'dev', 
+		help=u'commands related to the device'
+	)
 
 	# device info
 	devcmds = devparser.add_subparsers()
@@ -549,10 +580,48 @@ def register_argparse_dev(cmdargs):
 		u'-d', 
 		metavar=u'domain', 
 		dest=u'domain', 
-		action=u'append',
-		help=u'the domain of the keys to get'
+		help=u'the domain of the key to get'
 	)
 	getcmd.set_defaults(func=cmd_get)
+
+	# set value
+	setcmd = devcmds.add_parser(
+		u'set', 
+		help=u'set key/value info about the device'
+	)
+	setcmd.add_argument(
+		u'key',
+		help=u'the key to set'
+	)
+	# XXX how do we support complex (dict) settings?
+	setcmd.add_argument(
+		u'value', 
+		help=u'the value of the key to apply (only able to set simple values at present)'
+	)
+	setcmd.add_argument(
+		u'-d', 
+		metavar=u'domain', 
+		dest=u'domain',
+		help=u'the domain the key to set lives in'
+	)
+	setcmd.set_defaults(func=cmd_set)
+
+	# delete value
+	delcmd = devcmds.add_parser(
+		u'del', 
+		help=u'delete key/value info from the device - DANGEROUS'
+	)
+	delcmd.add_argument(
+		u'key', 
+		help=u'the key of the value to delete'
+	)
+	delcmd.add_argument(
+		u'-d', 
+		metavar=u'domain', 
+		dest=u'domain', 
+		help=u'the domain of the key to delete'
+	)
+	delcmd.set_defaults(func=cmd_del)
 
 	# unpair
 	unpaircmd = devcmds.add_parser(
@@ -582,6 +651,17 @@ def register_argparse_dev(cmdargs):
 	)
 	buddycmd.set_defaults(func=cmd_buddy)
 
-	# XXX set/remove value
+	# relay ports from localhost to device (tcprelay style)
+	relaycmd = devcmds.add_parser(
+		u'relay',
+		help=u'relay tcp ports from locahost to device'
+	)
+	relaycmd.add_argument(
+		u'port:pair',
+		nargs=u'+',
+		help=u'a pair of ports to relay <local>:<device>'
+	)
+	relaycmd.set_defaults(func=cmd_relay)
+
 	# XXX activate, deactivate - do we really want to be able to do these?
 
