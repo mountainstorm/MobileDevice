@@ -29,6 +29,8 @@ import os
 
 
 class Syslog(object):
+	u'''Syslog relay class; starts the syslog service and reads all entries'''
+
 	def __init__(self, amdevice):
 		self.s = amdevice.start_service(AMSVC_SYSLOG_RELAY)
 		if self.s is None:
@@ -38,25 +40,31 @@ class Syslog(object):
 		os.close(self.s)
 
 	def read(self, length=1024):
+		u'''reads at most length bytes from the syslog; blocking if no more data
+		is avaliable
+
+		Arguments:
+		length -- the max bytes to read (default 1024)
+		'''
 		return os.read(self.s, length)
 
 
-if __name__ == u'__main__':
+def register_argparse_syslog(cmdargs):
+	import argparse
 	import sys
 
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		sl = Syslog(d)
-
+	def cmd_syslog(args, dev):
+		sl = Syslog(dev)
 		while True:
 			msg = sl.read()
 			if msg is None:
 				break
 			sys.stdout.write(msg)
-
 		sl.disconnect()
-		return d
-	
-	handle_devices(factory)
 
+	# syslog command
+	syslogcmd = cmdargs.add_parser(
+		u'syslog', 
+		help=u'displays syslog info from the device'
+	)
+	syslogcmd.set_defaults(func=cmd_syslog)
