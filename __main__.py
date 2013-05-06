@@ -31,9 +31,6 @@ if __name__ == u'__main__':
 	import argparse
 	from __init__ import *
 
-	#	s = d.connect_to_port(62078)
-	#	print u'open socket to lockdownd: %d' % s
-	#	os.close(s)
 
 	class CmdArguments(object):
 		def __init__(self):
@@ -44,12 +41,12 @@ if __name__ == u'__main__':
 			self._parser = argparse.ArgumentParser()
 
 			self._parser.add_argument(
-				u'-d', 
-				metavar=u'DEVID',
+				u'-d',
+				metavar=u'devid',
 				dest=u'device_idx',
 				choices=range(len(self._devs.keys())),
 				type=int,
-				action=u'append',
+				action=u'store',
 				help=u'only operate on the specified device'
 			)
 			
