@@ -69,15 +69,19 @@ def register_argparse_afc(cmdargs):
 	import afcmediadirectory
 	import afcroot
 	import time
+	import posixpath
 
 	def printdir(afc, path, recurse):
 		dirlist = []
+		rows = []
+		colmax = [0, 0, 0, 0]
+		print "afc: ", path
 		for name in afc.listdir(path):
 			isdir = u''
-			info = afc.lstat(path + name)
+			info = afc.lstat(posixpath.join(path, name))
 			if info.st_ifmt == stat.S_IFDIR:
 				isdir = u'/'
-				dirlist.append(path + name + isdir)
+				dirlist.append(posixpath.join(path, name))
 
 			types = {
 				stat.S_IFSOCK: u's',
@@ -88,8 +92,34 @@ def register_argparse_afc(cmdargs):
 				stat.S_IFCHR: u'c',
 				stat.S_IFIFO: u'p'
 			}
-			t = time.asctime(time.gmtime(float(info.st_mtime)))
-			print(types[info.st_ifmt] + u' ' + t + u' ' + info.st_size + u' ' + name + isdir)
+			modtime = long(info.st_mtime)
+			if long(time.time()) - modtime > (60*60*24*365):
+				# only show year if its over a year old (ls style)
+				strtime = time.strftime(u'%d %b  %Y', time.gmtime(modtime))
+			else:
+				strtime = time.strftime(u'%d %b %H:%M', time.gmtime(modtime))
+			islink = u''
+			if info.st_ifmt == stat.S_IFLNK:
+				islink = u' -> ' + afc.readlink(posixpath.join(path, name))
+
+			row = (
+				types[info.st_ifmt],
+				info.st_size,
+				strtime,
+				name + isdir + islink
+			)
+			rows.append(row)
+			for i in range(len(row)):
+				if len(row[i]) > colmax[i]:
+					colmax[i] = len(row[i])
+	
+		for row in rows:
+			print(
+				row[0].ljust(colmax[0]) + u'  ' +
+				row[1].rjust(colmax[1]) + u'  ' + 
+				row[2].ljust(colmax[2]) + u'  ' + 
+				row[3])
+
 		if recurse:
 			for name in dirlist:
 				print(u'\n' + name)
@@ -97,7 +127,10 @@ def register_argparse_afc(cmdargs):
 
 	def get_afc(args, dev):
 		retval = None
-		if args.m:
+		if args.path.startswith(u'/var/mobile/Media'):
+			retval = afcmediadirectory.AFCMediaDirectory(dev)
+			args.path = args.path[len(u'/var/mobile/Media'):]
+		elif args.m:
 			retval = afcmediadirectory.AFCMediaDirectory(dev)
 		elif args.c:
 			retval = afccrashlogdirectory.AFCCrashLogDirectory(dev)
@@ -114,6 +147,54 @@ def register_argparse_afc(cmdargs):
 		afc = get_afc(args, dev)
 		printdir(afc, args.path.decode(u'utf-8'), args.r)
 		afc.disconnect()
+
+	def cmd_mkdir(args, dev):
+		afc = get_afc(args, dev)
+		afc.mkdir(args.path)
+		afc.disconnect()
+
+	def cmd_rm(args, dev):
+		afc = get_afc(args, dev)
+		afc.remove(args.path)
+		afc.disconnect()
+
+	def cmd_ln(args, dev):
+		# XXX unable to make linking work?
+		afc = get_afc(args, dev)
+		# if we're using the default mediadirectory then adjust the link
+		if args.link.startswith(u'/var/mobile/Media'):
+			args.link = args.link[len(u'/var/mobile/Media'):]
+		if args.s:
+			afc.symlink(args.path, args.link)
+		else:
+			afc.link(args.path, args.link)
+		afc.disconnect()
+
+	def cmd_get(args, dev):
+		dest = args.dest
+		if dest[-1] == os.sep:
+			# trailing seperator so dest has same name as src
+			dest = posixpath.join(dest, posixpath.basename(args.path))
+
+		afc = get_afc(args, dev)
+		s = afc.open(args.path, u'r')
+		d = open(dest, u'w+')
+		d.write(s.readall())
+		d.close()
+		s.close()
+		afc.disconnect()
+
+	def cmd_put(args, dev):
+		if args.path[-1] == os.sep:
+			# trailing seperator so dest has same name as src
+			args.path = posixpath.join(args.path, posixpath.basename(args.src))
+
+		afc = get_afc(args, dev)
+		d = afc.open(args.path, u'w')
+		s = open(args.src, u'r')
+		d.write(s.read())
+		s.close()
+		d.close()
 
 	# afc command
 	afcparser = cmdargs.add_parser(
@@ -155,6 +236,87 @@ def register_argparse_afc(cmdargs):
 	)
 	lscmd.set_defaults(func=cmd_ls)
 
+	# mkdir command
+	mkdircmd = afccmd.add_parser(
+		u'mkdir',
+		help=u'creates a directory'
+	)
+	mkdircmd.add_argument(
+		u'path',
+		help=u'path of the dir to create'
+	)
+	mkdircmd.set_defaults(func=cmd_mkdir)
+
+	# rmdir / rm
+	rmcmd = afccmd.add_parser(
+		u'rm',
+		help=u'remove directory/file'
+	)
+	rmcmd.add_argument(
+		u'path',
+		help=u'the path to delete'
+	)
+	rmcmd.set_defaults(func=cmd_rm)
+
+	rmdircmd = afccmd.add_parser(
+		u'rmdir',
+		help=u'remove directory/file'
+	)
+	rmdircmd.add_argument(
+		u'path',
+		help=u'the path to delete'
+	)
+	rmdircmd.set_defaults(func=cmd_rm)
+
+	# ln
+	lncmd = afccmd.add_parser(
+		u'ln',
+		help=u'create a link (symbolic or hard)'
+	)
+	lncmd.add_argument(
+		u'path',
+		help=u'the pre-existing path to link to'
+	)
+	lncmd.add_argument(
+		u'link',
+		help=u'the path for the link'
+	)
+	lncmd.add_argument(
+		u'-s',
+		action=u'store_true',
+		help=u'create a symbolic link'
+	)
+	lncmd.set_defaults(func=cmd_ln)
+
+	# get
+	getcmd = afccmd.add_parser(
+		u'get',
+		help=u'retrieve a file from the device'
+	)
+	getcmd.add_argument(
+		u'path',
+		help=u'path on the device to retrieve'
+	)
+	getcmd.add_argument(
+		u'dest',
+		help=u'local path to write file to'
+	)
+	getcmd.set_defaults(func=cmd_get)
+
+	# put
+	putcmd = afccmd.add_parser(
+		u'put',
+		help=u'upload a file from the device'
+	)
+	putcmd.add_argument(
+		u'src',
+		help=u'local path to read file from'
+	)
+	putcmd.add_argument(
+		u'path',
+		help=u'path on the device to write'
+	)
+	putcmd.set_defaults(func=cmd_put)
 
 #if __name__ == u'__main__':
 #	import sys
