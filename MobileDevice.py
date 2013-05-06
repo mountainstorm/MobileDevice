@@ -438,6 +438,7 @@ AMDeviceValidatePairing.argtypes = [AMDeviceRef]
 # TODO: AMDeviceWakeupOperationSchedule
 # TODO: AMDeviceWakeupUsingToken
 
+# TODO: this is wrong - needs a cfdata somewhere
 AMDeviceConnectByAddressAndPort = MobileDevice._AMDeviceConnectByAddressAndPort
 AMDeviceConnectByAddressAndPort.restype = mach_error_t
 AMDeviceConnectByAddressAndPort.argtypes = [
@@ -457,9 +458,9 @@ AMDSetLogLevel.argtypes = [c_int]
 USBMuxConnectByPort = MobileDevice.USBMuxConnectByPort
 USBMuxConnectByPort.restype = mach_error_t
 USBMuxConnectByPort.argtypes = [
-	c_uint32, 
-	c_ushort, 
-	POINTER(c_int32)
+	c_int, 
+	c_int, 
+	POINTER(c_int)
 ]
 
 USBMuxListenerSetDebug = MobileDevice.USBMuxListenerSetDebug
@@ -524,7 +525,7 @@ AFCRenamePath.argtypes = [AFCConnectionRef, c_char_p, c_char_p]
 if 1:
 	AFCLinkPath = MobileDevice.AFCLinkPath
 	AFCLinkPath.restype = AFCError
-	AFCLinkPath.argtypes = [AFCConnectionRef, c_int64, c_char_p, c_char_p]
+	AFCLinkPath.argtypes = [AFCConnectionRef, c_uint64, c_char_p, c_char_p]
 
 
 AFCFileRefOpen = MobileDevice.AFCFileRefOpen
