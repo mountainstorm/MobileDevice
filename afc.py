@@ -41,7 +41,8 @@ def _stat_from_afcdict(afcdict):
 		if name.value is None or value.value is None: 
 			break
 
-		if name.value.decode(u'utf-8') == u'st_ifmt':
+		strname = name.value.decode(u'utf-8')
+		if strname == u'st_ifmt':
 			modes = {
 				u'S_IFSOCK': stat.S_IFSOCK,
 				u'S_IFLNK': stat.S_IFLNK,
@@ -56,13 +57,19 @@ def _stat_from_afcdict(afcdict):
 				raise RuntimeError(u'Unknown file type:', v)
 			setattr(
 				retval, 
-				name.value.decode(u'utf-8'),
+				strname,
 				modes[v]
+			)
+		elif strname == u'st_mtime' or strname == u'st_birthtime':
+			setattr(
+				retval, 
+				strname, 
+				value.value.decode(u'utf-8')[:10]
 			)
 		else:
 			setattr(
 				retval, 
-				name.value.decode(u'utf-8'), 
+				strname, 
 				value.value.decode(u'utf-8')
 			)
 	return retval
@@ -73,11 +80,12 @@ class AFCFile(object):
 	def __init__(self, afc_con, path, mode):
 		self.afc_con = afc_con
 		self.mode = 0
-		if mode.find(u'r'):
-			self.mode = 2
-		if mode.find(u'w'):
-			self.mode = 3 
+		if mode.find(u'r') != -1:
+			self.mode |= 0x1
+		if mode.find(u'w') != -1:
+			self.mode |= 0x2 
 		self.f = AFCFileRef()
+		self.closed = True
 		if AFCFileRefOpen(
 				self.afc_con, 
 				path.encode(u'utf-8'), 
@@ -98,7 +106,7 @@ class AFCFile(object):
 		pass
 
 	def readable(self):
-		return self.mode == 2 or self.mode == 3
+		return self.mode & 0x1
 
 	def readline(self, limit=-1):
 		raise NotImplementedError()
@@ -130,7 +138,7 @@ class AFCFile(object):
 			raise ValueError(u'Unable to truncate file')
 
 	def writable(self):
-		return self.mode == 3
+		return self.mode & 0x2
 
 	def writelines(self, lines):
 		raise NotImplementedError()
@@ -144,23 +152,39 @@ class AFCFile(object):
 			raise ValueError(u'Unable to unlock file')
 
 	def read(self, n=-1):
-		pass # TODO:
+		retval = ''
+		br = 0
+		buflen = c_uint32(4096)
+		buf = (c_char * buflen.value)()
+		while br < n or n == -1:
+			buflen.value = 4096
+			if AFCFileRefRead(
+				self.afc_con, 
+				self.f, 
+				buf,
+				byref(buflen)
+			) != MDERR_OK or buflen.value == 0:
+				break # eof
+			retval += buf.raw[:buflen.value]
+			br += buflen.value
+		return retval
 
 	def readall(self):
-		pass # TODO:
+		return self.read()
 
 	def readinto(self, b):
 		raise NotImplementedError()
 
 	def write(self, b):
-		raise NotImplementedError()
-
-
-class AFCPath(object):
-	def __init__(self, afc):
-		self.afc = afc
-		self.afc_con = afc.afc_con
-		# TODO: add all the path methods - passthrough to posixpath
+		buflen = c_uint32(len(b))
+		buf = c_char_p(b)
+		if AFCFileRefWrite(
+			self.afc_con,
+			self.f,
+			buf,
+			buflen
+		) != MDERR_OK:
+			raise RuntimeError(u'Error during write')
 
 
 class AFC(object):
@@ -169,19 +193,18 @@ class AFC(object):
 		self.afc_con = AFCConnectionRef()
 		if AFCConnectionOpen(self.s, 0, byref(self.afc_con)) != MDERR_OK:
 			raise RuntimeError(u'Unable to open AFC connection')
-		self.path = AFCPath(self)
 
 	def disconnect(self):
 		AFCConnectionClose(self.afc_con)
 
-	def link(self, source, link_name):
+	def link(self, target, link_name):
 		if AFCLinkPath(
 				self.afc_con, 
-				1, 
-				source.encode(u'utf-8'),
+				1, # hard
+				target.encode(u'utf-8'),
 				link_name.encode(u'utf-8')
 			) != MDERR_OK:
-			raise OSError(u'Unable to create hard link:', source, link_name)
+			raise OSError(u'Unable to create hard link:', target, link_name)
 		return True
 
 	# typically you get a class with the following members
@@ -259,14 +282,14 @@ class AFC(object):
 			retval = self.lstat(retval.LinkTarget)
 		return retval
 
-	def symlink(self, source, link_name):
+	def symlink(self, target, link_name):
 		if AFCLinkPath(
 				self.afc_con, 
-				0, 
-				source.encode(u'utf-8'),
+				2, # soft 
+				target.encode(u'utf-8'),
 				link_name.encode(u'utf-8')
 			) != MDERR_OK:
-			raise OSError(u'Unable to create symlink:', source, link_name)
+			raise OSError(u'Unable to create symlink:', target, link_name)
 		return True
 
 	def unlink(self, path):
