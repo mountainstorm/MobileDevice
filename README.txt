@@ -1,7 +1,22 @@
 MobileDevice.py
 ---------------
 
-A python package which wraps Apple's MobileDevice API.  
+A python package which aims to wrap Apple's MobileDevice API; to provide 
+complete support for all iOS, device services.
+
+The project aims to provide both a native Pythin API (using ctypes) and a fully
+features command line interface.
+
+You can run the project directory as a package e.g.
+
+python MobileDevice/ afc put myfile.txt /var/mobile/Media/
+
+(will upload a file to the device)
+
+at any point append -h to the command line to get more help
+
+Project Structure
+-----------------
 
 The basic structure of the package is as follows:
 
@@ -12,7 +27,6 @@ http://theiphonewiki.com/wiki/MobileDevice_Library#MobileDevice_Header_.28Mobile
 CoreFoundation.py: this is a simple ctypes wrapper around CoreFoundation and a
 few helper methods to convert between CFTypes and python types
 
-
 All other classes:
 afc.py, syslog.py, filerelay.py, amdevice.py etc are more pythonic wrappers
 around the base C library.
@@ -22,6 +36,12 @@ The idea being that we give a python abstraction of all the services e.g.
 
 To list all files on the file system:
 -------------------------------------
+from command line:
+
+python MobileDevice/ afc ls /var/mobile/Media
+
+or in code:
+
 from MobileDevice import *
 
 def printdir(afc, path):
@@ -38,7 +58,7 @@ def factory(dev):
 	d.connect()
 	afc = AFC(d)
 
-	printdir(afc, u'/') # recursive print of all files visible
+	printdir(afc, u'/var/mobile/Media') # recursive print of all files visible
 
 	afc.disconnect()
 	return d
@@ -48,6 +68,12 @@ handle_devices(factory)
 
 To retrieve a .cpio.gz file of all the readonly special data (crashlogs etc)
 ----------------------------------------------------------------------------
+from command line:
+
+python ./ filerelay dump.cpio.gz
+
+or in code:
+
 from MobileDevice import *
 
 def factory(dev):
@@ -76,6 +102,12 @@ handle_devices(factory)
 
 To read and print all syslog messages
 -------------------------------------
+from command line:
+
+python ./ syslog
+
+or in code:
+
 from MobileDevice import *
 import sys
 
@@ -118,3 +150,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+Keywords
+--------
+iOS, iPad, iPhone, Apple, MobileDevice, python, command line, lockdownd, 
+usbmuxd
