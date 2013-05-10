@@ -25,6 +25,7 @@
 from MobileDevice import *
 import socket
 import select
+import os
 
 
 class AMDevice(object):
@@ -309,12 +310,21 @@ class AMDevice(object):
 		Raises RuntimeError on error
 		''' 
 		sock = c_int32()
+		cfsvc_name = CFStringCreateWithCString(
+			None, 
+			service_name, 
+			kCFStringEncodingUTF8
+		)
+		err = False
 		if AMDeviceStartServiceWithOptions(
 				self.dev, 
-				service_name, 
+				cfsvc_name, 
 				options,
 				byref(sock)
 			) != MDERR_OK:
+			err = True
+		CFRelease(cfsvc_name)
+		if err:
 			raise RuntimeError(u'Unable to start service %s' % service_name)
 		return sock.value
 
@@ -384,6 +394,53 @@ class AMDevice(object):
 			#	raise RuntimeError(u'Unable to connect to socket')
 		return socket.fromfd(sock.value, socket.AF_INET, socket.SOCK_STREAM)
 
+	def find_device_support_path(self):
+		u'''Returns the best device support path for this device
+
+		Returns:
+		the path
+
+		Error:
+		Raises RuntimeError if a suitable path can be found
+		'''
+		# XXX: Windows version
+		version = self.get_value(name=u'ProductVersion')
+		build = self.get_value(name=u'BuildVersion')
+		home = os.environ[u'HOME']
+		ds = os.path.join(
+			home, 
+			u'/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/'
+		)
+		#print u'%s %s' % (version, build)
+		path = os.path.join(ds, u'%s (%s)' % (version, build))
+		if not os.path.exists(path):
+			# try it without the build no
+			path = os.path.join(ds, u'%s' % (version))
+			if not os.path.exists(path):
+				# XXX perhaps add support for finding the next best image
+				raise RuntimeError(u'Unable to find device support path')
+		return path
+
+	def find_developer_disk_image_path(self, device_support_path=None):
+		u'''Returns the best debug disk image for the device
+
+		Returns:
+		the path of the .dmg
+
+		Error:
+		Raises RuntimeError if a suitable disk image can't be found
+		'''
+		if device_support_path is None:
+			device_support_path = self.find_device_support_path()
+
+		path = os.path.join(
+			device_support_path, 
+			u'DeveloperDiskImage.dmg'
+		)
+		if not os.path.exists(path):
+			# bum - that shouldn't happen
+			raise RuntimeError(u'Unable to find developer disk image')
+		return path
 
 
 def handle_devices(factory):

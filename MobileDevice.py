@@ -83,26 +83,26 @@ AMD_IPHONE_PRODUCT_ID = 0x1290
 
 
 # Services, found in /System/Library/Lockdown/Services.plist
-AMSVC_BACKUP = CFSTR(u'com.apple.mobilebackup')
-AMSVC_DEBUG_IMAGE_MOUNT = CFSTR(u'com.apple.mobile.debug_image_mount')
-AMSVC_NOTIFICATION_PROXY = CFSTR(u'com.apple.mobile.notification_proxy')
-AMSVC_PURPLE_TEST = CFSTR(u'com.apple.purpletestr')
-AMSVC_SOFTWARE_UPDATE = CFSTR(u'com.apple.mobile.software_update')
-AMSVC_SYNC = CFSTR(u'com.apple.mobilesync')
-AMSVC_SCREENSHOT = CFSTR(u'com.apple.screenshotr')
-AMSVC_SYSTEM_PROFILER = CFSTR(u'com.apple.mobile.system_profiler')
+AMSVC_BACKUP = u'com.apple.mobilebackup'
+AMSVC_DEBUG_IMAGE_MOUNT = u'com.apple.mobile.debug_image_mount'
+AMSVC_NOTIFICATION_PROXY = u'com.apple.mobile.notification_proxy'
+AMSVC_PURPLE_TEST = u'com.apple.purpletestr'
+AMSVC_SOFTWARE_UPDATE = u'com.apple.mobile.software_update'
+AMSVC_SYNC = u'com.apple.mobilesync'
+AMSVC_SCREENSHOT = u'com.apple.screenshotr'
+AMSVC_SYSTEM_PROFILER = u'com.apple.mobile.system_profiler'
 
-AMSVC_SPRINGBOARD_SERVICES = CFSTR(u'com.apple.springboardservices')
-AMSVC_INSTALLATION_PROXY = CFSTR(u'com.apple.mobile.installation_proxy')
-AMSVC_HOUSE_ARREST = CFSTR(u'com.apple.mobile.house_arrest')
-AMSVC_CRASH_REPORT_COPY_MOBILE = CFSTR(u'com.apple.crashreportcopymobile')
-AMSVC_AFC = CFSTR(u'com.apple.afc')
-AMSVC_SYSLOG_RELAY = CFSTR(u'com.apple.syslog_relay')
-AMSVC_FILE_RELAY = CFSTR(u'com.apple.mobile.file_relay')
-AMSVC_WEBINSPECTOR = CFSTR(u'com.apple.webinspector')
+AMSVC_SPRINGBOARD_SERVICES = u'com.apple.springboardservices'
+AMSVC_INSTALLATION_PROXY = u'com.apple.mobile.installation_proxy'
+AMSVC_HOUSE_ARREST = u'com.apple.mobile.house_arrest'
+AMSVC_CRASH_REPORT_COPY_MOBILE = u'com.apple.crashreportcopymobile'
+AMSVC_AFC = u'com.apple.afc'
+AMSVC_SYSLOG_RELAY = u'com.apple.syslog_relay'
+AMSVC_FILE_RELAY = u'com.apple.mobile.file_relay'
+AMSVC_WEBINSPECTOR = u'com.apple.webinspector'
 # iosiadnositcs was the name before iOS 5, mobile.diagnostics si the new name
-AMSVC_MOBILE_DIAGNOSTICS_RELAY = CFSTR("com.apple.mobile.diagnostics_relay")
-AMSVC_IOSDIAGNOSTICS_RELAY = CFSTR("com.apple.iosdiagnostics.relay")
+AMSVC_MOBILE_DIAGNOSTICS_RELAY = u'com.apple.mobile.diagnostics_relay'
+AMSVC_IOSDIAGNOSTICS_RELAY = u'com.apple.iosdiagnostics.relay'
 
 
 # Types

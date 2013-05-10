@@ -25,6 +25,7 @@
 from amdevice import *
 import os.path
 import os
+from plistservice import *
 
 
 class ImageMounter(object):
@@ -33,33 +34,6 @@ class ImageMounter(object):
 
 	def disconnect(self):
 		pass
-
-	def find_debug_image(self):
-		u'''Returns the best debug disk image for the device
-
-		Returns:
-		the path of the .dmg
-
-		Error:
-		Raises RuntimeError if a suitable disk image can't be found
-		'''
-		# TODO: Windows version
-		version = self.dev.get_value(name=u'ProductVersion')
-		build = self.dev.get_value(name=u'BuildVersion')
-		home = os.environ[u'HOME']
-		ds = os.path.join(
-			home, 
-			u'/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/'
-		)
-		#print u'%s %s' % (version, build)
-		path = ds + u'%s (%s)/DeveloperDiskImage.dmg' % (version, build)
-		if not os.path.exists(path):
-			# try it without the build no
-			path = ds + u'%s/DeveloperDiskImage.dmg' % (version)
-			if not os.path.exists(path):
-				# XXX perhaps add support for finding the next best image
-				raise RuntimeError(u'Unable to find developer disk image')
-		return path
 
 	def mount(self, image_path=None, progress=None):
 		u'''Mounts a disk image on the device.
@@ -75,10 +49,10 @@ class ImageMounter(object):
 		the signature file
 		'''
 		def callback(cfdict, arg):
-			pass
+			pass #print CFTypeTo(cfdict)
 
 		if image_path is None:
-			image_path = self.find_debug_image()
+			image_path = self.dev.find_developer_disk_image_path()
 
 		sigpath = image_path + u'.signature'
 		f = open(sigpath, u'rb')
@@ -87,17 +61,23 @@ class ImageMounter(object):
 
 		cfpath = CFTypeFrom(image_path)
 		cfoptions = CFTypeFrom({
-			u'ImageType': u'Developer',
+			u'ImageType': u'Developer', # XXX add support for other image types
 			u'ImageSignature': sig
 		})
-
 		cb = AMDeviceProgressCallback(callback)
 		if progress is not None:
 			cb = AMDeviceProgressCallback(progress)
+		# XXX so the code for mount image checks if its mounted and only bothers
+		# to resend the image if it isn't; for some reason I dont understand its
+		# not doing this on my version - its always sending it; then the mount 
+		# fails (with lots of syslog output on the device)
+		# -- this may be due to the image I'm loading not being a perfect match
+		#AMDSetLogLevel(0xff)
 		err = AMDeviceMountImage(self.dev.dev, cfpath, cfoptions, cb, None)
+		#AMDSetLogLevel(0x00)
 		CFRelease(cfpath)
 		CFRelease(cfoptions)
-		if err != MDERR_OK:
+		if err != MDERR_OK and (err & 0xFFFFFFFF) != 0xe8000076: # already mounted
 			raise RuntimeError(u'Unable to mount disk image', err)
 
 

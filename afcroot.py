@@ -28,33 +28,8 @@ from afc import *
 
 class AFCRoot(AFC):
 	def __init__(self, amdevice):
-		s = amdevice.start_service(CFSTR(u'com.apple.afc2'))
+		s = amdevice.start_service(u'com.apple.afc2')
 		if s is None:
 			raise RuntimeError(u'Unable to launch:', u'com.apple.afc2')
 		AFC.__init__(self, s)
-
-
-if __name__ == u'__main__':
-	import sys
-
-	def printdir(afc, path):
-		for name in afc.listdir(path):
-			isdir = u''
-			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
-				isdir = u'/'
-			print path + name + isdir
-			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
-				printdir(afc, path + name + isdir)
-	
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		afc = AFCRoot(d)
-
-		printdir(afc, u'/System/Library/Caches/') # recursive print of all files visible
-
-		afc.disconnect()
-		return d
-	
-	handle_devices(factory)
 
