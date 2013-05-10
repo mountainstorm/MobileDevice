@@ -387,16 +387,15 @@ def CFTypeFrom(value):
 def CFTypeTo(value):
 	retval = None
 	typeid = CFGetTypeID(value)
-	if typeid == CFDataGetTypeID():
-		retval = string_at(CFDataGetBytePtr(value), CFDataGetLength(value))
-
-	elif typeid == CFStringGetTypeID():
+	if typeid == CFStringGetTypeID():
 		l = CFStringGetLength(value)
 		bufsize = CFStringGetMaximumSizeForEncoding(l, kCFStringEncodingUTF8) + 1
 		buf = create_string_buffer(bufsize)
 		CFStringGetCString(value, buf, bufsize, kCFStringEncodingUTF8)
 		retval = buf.value
-	
+	elif typeid == CFDataGetTypeID():
+		retval = string_at(CFDataGetBytePtr(value), CFDataGetLength(value))
+
 	elif typeid == CFNumberGetTypeID():
 		if CFNumberIsFloatType(value):
 			num = c_double()
