@@ -32,7 +32,6 @@ class PlistService(object):
 		self.format = format
 		self.s = None
 		self.dev = amdevice
-		self.format = format
 		for name in servicenames:
 			self.s = amdevice.start_service(name)
 			if self.s is not None:
@@ -60,7 +59,7 @@ class PlistService(object):
 				raise RuntimeError(u'Unable to read reply')
 			reply += r
 			left -= len(r)
-		return dict_from_plist_encoding(reply, self.format)
+		return dict_from_plist_encoding(reply)
 
 
 

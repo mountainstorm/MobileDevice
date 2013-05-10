@@ -333,6 +333,8 @@ def CFTypeFrom(value):
 		retval = CFDataCreate(None, data, len(value))
 
 	elif isinstance(value, unicode):
+		v = c_wchar_p(value)
+		#retval = CFStringCreateWithCharacters(None, v, len(value))
 		retval = CFStringCreateWithCString(None, value, kCFStringEncodingUTF8)
 
 	elif isinstance(value, bool):

@@ -34,3 +34,27 @@ class AFCCrashLogDirectory(AFC):
 		AFC.__init__(self, s)
 
 
+if __name__ == u'__main__':
+	import sys
+
+	def printdir(afc, path):
+		for name in afc.listdir(path):
+			isdir = u''
+			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
+				isdir = u'/'
+			print path + name + isdir
+			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
+				printdir(afc, path + name + isdir)
+	
+	def factory(dev):
+		d = AMDevice(dev)
+		d.connect()
+		afc = AFCCrashLogDirectory(d)
+
+		printdir(afc, u'/') # recursive print of all files visible
+
+		afc.disconnect()
+		return d
+	
+	handle_devices(factory)
+
