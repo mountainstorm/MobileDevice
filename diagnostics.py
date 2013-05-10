@@ -143,9 +143,70 @@ def register_argparse_diag(cmdargs):
 	import pprint
 	import sys
 
-	def ioreg_dmp(d, pad=u''):
-		# XXX make pretty
-		pprint.pprint(d)
+	def ioreg_dmp(d, pad=u'  '):
+		# XXX should really adjust to get rid of all the -2's
+		if isinstance(d, list):
+			sys.stdout.write(u'[\n')
+			for i in range(len(d)):
+				sys.stdout.write(pad)
+				ioreg_dmp(d[i], pad + u'  ')
+			sys.stdout.write(pad[:-2] + u']\n')
+		elif isinstance(d, dict):
+			i = 0
+			if u'regEntry' in d:
+				# its a reg entry
+				inheritance = d[u'inheritance'].replace(u' : ', u':')
+				sys.stdout.write(
+					u'+-o ' + d[u'name'] + u'  <class ' + inheritance + u', ' + d[u'state'] + u'>\n'
+				)
+				op = pad
+				if len(d[u'children']) > 0:
+					pad += u'| '
+				else:
+					pad += u'  '
+				sys.stdout.write(pad)
+				ioreg_dmp(d[u'properties'], pad + u'  ')
+				sys.stdout.write(pad + u'\n')
+				i = 0
+				for c in d[u'children']:
+					if i == len(d[u'children'])-1:
+						pad = pad[:-2] + u'  '
+					sys.stdout.write(pad[:-2])
+					ioreg_dmp(c, pad)
+					i += 1
+			else:
+				# something else?
+				sys.stdout.write(u'{\n')
+				for k, v in d.iteritems():
+					sys.stdout.write(pad + u'"' + k + u'" = ')
+					ioreg_dmp(v, pad + u'  ')
+				sys.stdout.write(pad[:-2] + u'}\n')
+		elif isinstance(d, unicode):
+			sys.stdout.write(u'"' + d + u'"\n')
+		elif isinstance(d, str):
+			# dont know why but some strings name/inheritence etc come back as 
+			# CFData rather then CFString's - so we'll try to convert; if it 
+			# doesn't look like a string
+			isdata = False
+			nullterm = False
+			for c in d:
+				if nullterm == True and ord(c) != 0:
+					isdata = True
+					break
+				if ord(c) == 0:
+					nullterm = True
+				elif ord(c) < 32 or ord(c) > 127:
+					isdata = True
+					break
+			if isdata:
+				sys.stdout.write(d.encode(u'hex') + u'\n')
+			else:
+				sys.stdout.write(u'"' + d + u'"\n')				
+		elif isinstance(d, (int, long, float, complex)):
+			sys.stdout.write(d.__str__() + u'\n')
+		else:
+			print type(d)
+			pprint.pprint(d)
 
 	def cmd_gestalt(args, dev):
 		diag = Diagnostics(dev)
@@ -172,7 +233,7 @@ def register_argparse_diag(cmdargs):
 			name = args.name.decode(u'utf-8')
 		if args.cls is not None:
 			cls = args.cls.decode(u'utf-8')
-		ioreg_dmp(diag.ioregistry(plane, name, cls))
+		ioreg_dmp(diag.ioregistry(plane, name, cls)[u'IORegistry'])
 		diag.disconnect()		
 
 	def cmd_sleep(args, dev):
