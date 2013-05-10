@@ -43,13 +43,15 @@ class InstallationProxy(PlistService):
 				u'ApplicationType': u'Any'
 			}
 		})
+		# I've no idea why we get it in multiple responses .. but we do
 		while True:
 			reply = self._recvmsg()
 			if (    reply is None 
 				or (    u'Status' in reply 
 					and reply[u'Status'] == u'Complete')):
 				break # done
-			retval.append(reply[u'CurrentList'])
+			for app in reply[u'CurrentList']:
+				retval.append(app)
 		return retval
 
 	def install_application(self, path, options=None, progress=None):

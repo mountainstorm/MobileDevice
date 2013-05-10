@@ -39,3 +39,4 @@ from springboard import *
 from filerelay import *
 from syslog import *
 from webkitinspector import *
+from debug import *
