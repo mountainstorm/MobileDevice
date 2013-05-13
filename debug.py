@@ -212,7 +212,7 @@ set inferior-auto-start-dyld 1
 
 	def set_run(self, args=None):
 		# we specify file when running; we can't when doing attach
-		runcmd = u'file "%s\nrun' % (self._file[0])
+		runcmd = u'file "%s"\nrun' % (self._file[0])
 		if args is not None:
 			for arg in args:
 				runcmd += u'"%s"' % arg
