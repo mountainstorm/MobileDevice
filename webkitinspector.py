@@ -34,16 +34,31 @@ class WebKitInspector(PlistService):
 		PlistService.__init__(self, amdevice, [AMSVC_WEBINSPECTOR])
 
 	def _sendmsg(self, selector, args):
-		PlistService._sendmsg(self, {
-			u'WIRFinalMessageKey': dict_to_plist_encoding({
-				u'__selector': selector,
-				u'__argument': args
+		wi = dict_to_plist_encoding({
+			u'__selector': selector,
+			u'__argument': args
+		})
+		step = 8096 # split very big messages
+		start = 0
+		end = step
+		while end < len(wi):
+			PlistService._sendmsg(self, {
+				u'WIRPartialMessageKey': wi[start:end]
 			})
+			start = end
+			end += step
+		PlistService._sendmsg(self, {
+			u'WIRFinalMessageKey': wi[start:end]
 		})
 
 	def _readmsg(self):
-		wi = PlistService._recvmsg(self)
-		rpc = dict_from_plist_encoding(wi[u'WIRFinalMessageKey'])
+		wi = ''
+		wimsg = PlistService._recvmsg(self)
+		while u'WIRPartialMessageKey' in wimsg:
+			wi += wimsg[u'WIRPartialMessageKey']
+			wimsg = PlistService._recvmsg(self)
+		wi += wimsg[u'WIRFinalMessageKey']
+		rpc = dict_from_plist_encoding(wi)
 		return (rpc[u'__selector'], rpc[u'__argument'])
 
 	def uniqueid(self):
@@ -64,8 +79,9 @@ class WebKitInspector(PlistService):
 				u'WIRConnectionIdentifierKey': connection_uuid,
 			}
 		)
-		print self._readmsg()
-		print self._readmsg()
+		retval = self._readmsg()
+		retval = self._readmsg() # discard the getConnectedApplications response
+		return retval[1]
 
 	# list avaliable applications
 	def getConnectedApplications(self, connection_uuid):
@@ -75,7 +91,8 @@ class WebKitInspector(PlistService):
 				u'WIRConnectionIdentifierKey': connection_uuid
 			}
 		)
-		print self._readmsg()
+		retval = self._readmsg()
+		return retval[1]
 
 	# get info about an applications e.g. pages in mobilesafari
 	def forwardGetListing(self, connection_uuid, appid):
@@ -86,7 +103,8 @@ class WebKitInspector(PlistService):
 				u'WIRApplicationIdentifierKey': appid
 			}
 		)
-		print self._readmsg()
+		retval = self._readmsg()
+		return retval[1]
 
 	# highlight a webview page
 	def forwardIndicateWebView(self, connection_uuid, appid, pageid, enable):
@@ -112,7 +130,7 @@ class WebKitInspector(PlistService):
 				u'WIRSenderKey': sender_uuid
 			}
 		)
-		print self._readmsg()
+		self._readmsg() # throw away the forwardGetListing response
 
 	# send webkit protocol message
 	def forwardSocketData(self, connection_uuid, appid, pageid, sender_uuid, jsonmsg):
@@ -126,7 +144,7 @@ class WebKitInspector(PlistService):
 				u'WIRSocketDataKey': jsonmsg.encode(u'utf-8')
 			}
 		)
-		print self._readmsg()
+		return self._readmsg()[1]
 
 	def forwardDidClose(self, connection_uuid, appid, pageid, sender_uuid):
 		self.sendmsg(
@@ -141,23 +159,67 @@ class WebKitInspector(PlistService):
 		print self._readmsg()
 
 
-if __name__ == u'__main__':
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		wi = WebKitInspector(d)
-		c = wi.uniqueid()
-		s = wi.uniqueid()
-		p = 2
+
+def register_argparse_webinspector(cmdargs):
+	import argparse
+	import sys
+	import mimetypes
+	import base64
+	import json
+
+	def cmd_navigate(args, dev):
+		# wakeup device
+		# switch to safari?
+		wi = WebKitInspector(dev)
+		conn = wi.uniqueid()
 		app = u'com.apple.mobilesafari'
-		wi.reportIdentifier(c)
-		wi.forwardGetListing(c, app)
-		wi.forwardSocketSetup(c, app, p, s)
-		wi.forwardSocketData(c, app, p, s, u'{"id": 1, "method": "Page.navigate", "params": {"url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="}}')
+
+		wi.reportIdentifier(conn)
+		wi.getConnectedApplications(conn)
+		listing = wi.forwardGetListing(conn, app)
+		pages = listing[u'WIRListingKey']
+
+		ident = int(pages.values()[0][u'WIRPageIdentifierKey'])
+		session = wi.uniqueid()
+		wi.forwardSocketSetup(conn, app, ident, session)
+
+		mimetype = mimetypes.guess_type(args.path)
+		
+		f = open(args.path, u'rb')
+		content = f.read()
+		f.close()
+
+		data = {
+			u'id': ident,
+			u'method': u'Page.navigate',
+			u'params': {
+				u'url': (
+					u'data:' + mimetype[0] + 
+					u';base64,' + base64.b64encode(content)
+				)
+			}
+		}
+
+		print wi.forwardSocketData(conn, app, ident, session, json.dumps(data))
 		wi.disconnect()
-		return d
-	
-	handle_devices(factory)
+
+	webparser = cmdargs.add_parser(
+		u'web', 
+		help=u'webinspector actions; requires settings->safari->advanced->web-inspector be enabled'
+	)
+	webcmd = webparser.add_subparsers()
+
+	# navigate command
+	navigatecmd = webcmd.add_parser(
+		u'navigate',
+		help=u'navigates a single safari window to the specified url'
+	)
+	navigatecmd.add_argument(
+		u'path',
+		help=u'the file to load (as a data: url) into the first page of mobilesafari'
+	)
+	navigatecmd.set_defaults(func=cmd_navigate)
+
 
 
 
