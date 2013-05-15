@@ -566,6 +566,7 @@ def register_argparse_dev(cmdargs):
 		domain = None
 		if args.domain is not None:
 			domain = args.domain.decode(u'utf-8')
+		# XXX add support for non-string types; bool next
 		dev.set_value(domain, args.key.decode(u'utf-8'), args.value.decode(u'utf-8'))
 
 	def cmd_del(args, dev):
