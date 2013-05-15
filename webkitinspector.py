@@ -24,42 +24,15 @@
 
 from MobileDevice import *
 from amdevice import *
-from plistservice import *
+from wirservice import *
 import uuid
 
 
-# Talk to safari using https://developers.google.com/chrome-developer-tools/docs/protocol/1.0/index
-class WebKitInspector(PlistService):
+# Talk to safari using:
+# https://developers.google.com/chrome-developer-tools/docs/protocol/1.0/index
+class WebKitInspector(WIRService):
 	def __init__(self, amdevice):
-		PlistService.__init__(self, amdevice, [AMSVC_WEBINSPECTOR])
-
-	def _sendmsg(self, selector, args):
-		wi = dict_to_plist_encoding({
-			u'__selector': selector,
-			u'__argument': args
-		})
-		step = 8096 # split very big messages
-		start = 0
-		end = step
-		while end < len(wi):
-			PlistService._sendmsg(self, {
-				u'WIRPartialMessageKey': wi[start:end]
-			})
-			start = end
-			end += step
-		PlistService._sendmsg(self, {
-			u'WIRFinalMessageKey': wi[start:end]
-		})
-
-	def _readmsg(self):
-		wi = ''
-		wimsg = PlistService._recvmsg(self)
-		while u'WIRPartialMessageKey' in wimsg:
-			wi += wimsg[u'WIRPartialMessageKey']
-			wimsg = PlistService._recvmsg(self)
-		wi += wimsg[u'WIRFinalMessageKey']
-		rpc = dict_from_plist_encoding(wi)
-		return (rpc[u'__selector'], rpc[u'__argument'])
+		WIRService.__init__(self, amdevice, [AMSVC_WEBINSPECTOR])
 
 	def uniqueid(self):
 		retval = str(uuid.uuid1())
@@ -79,8 +52,8 @@ class WebKitInspector(PlistService):
 				u'WIRConnectionIdentifierKey': connection_uuid,
 			}
 		)
-		retval = self._readmsg()
-		retval = self._readmsg() # discard the getConnectedApplications response
+		retval = self._recvmsg()
+		retval = self._recvmsg() # discard the getConnectedApplications response
 		return retval[1]
 
 	# list avaliable applications
@@ -91,7 +64,7 @@ class WebKitInspector(PlistService):
 				u'WIRConnectionIdentifierKey': connection_uuid
 			}
 		)
-		retval = self._readmsg()
+		retval = self._recvmsg()
 		return retval[1]
 
 	# get info about an applications e.g. pages in mobilesafari
@@ -103,7 +76,7 @@ class WebKitInspector(PlistService):
 				u'WIRApplicationIdentifierKey': appid
 			}
 		)
-		retval = self._readmsg()
+		retval = self._recvmsg()
 		return retval[1]
 
 	# highlight a webview page
@@ -117,7 +90,7 @@ class WebKitInspector(PlistService):
 				u'WIRIndicateEnabledKey': enable
 			}
 		)
-		print self._readmsg()
+		print self._recvmsg()
 
 	# setup a webkit protocol connection
 	def forwardSocketSetup(self, connection_uuid, appid, pageid, sender_uuid):
@@ -130,7 +103,7 @@ class WebKitInspector(PlistService):
 				u'WIRSenderKey': sender_uuid
 			}
 		)
-		self._readmsg() # throw away the forwardGetListing response
+		self._recvmsg() # throw away the forwardGetListing response
 
 	# send webkit protocol message
 	def forwardSocketData(self, connection_uuid, appid, pageid, sender_uuid, jsonmsg):
@@ -144,7 +117,7 @@ class WebKitInspector(PlistService):
 				u'WIRSocketDataKey': jsonmsg.encode(u'utf-8')
 			}
 		)
-		return self._readmsg()[1]
+		return self._recvmsg()[1]
 
 	def forwardDidClose(self, connection_uuid, appid, pageid, sender_uuid):
 		self.sendmsg(
@@ -156,7 +129,7 @@ class WebKitInspector(PlistService):
 				u'WIRSenderKey': sender_uuid
 			}
 		)
-		print self._readmsg()
+		print self._recvmsg()
 
 
 
