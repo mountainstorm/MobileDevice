@@ -207,8 +207,8 @@ AMDeviceActivate = MobileDevice.AMDeviceActivate
 AMDeviceActivate.restype = mach_error_t
 AMDeviceActivate.argtypes = [AMDeviceRef, CFTypeRef]
 
-# TODO: _AMDeviceArchiveApplication
-# TODO: _AMDeviceCheckCapabilitiesMatch
+# XXX _AMDeviceArchiveApplication
+# XXX _AMDeviceCheckCapabilitiesMatch
 
 AMDeviceConnect = MobileDevice.AMDeviceConnect
 AMDeviceConnect.restype = mach_error_t
@@ -216,7 +216,7 @@ AMDeviceConnect.argtypes = [AMDeviceRef]
 
 # AMDeviceConvertError - does nothing
 
-# TODO: _AMDeviceCopyAuthInstallPreflightOptions
+# XXX _AMDeviceCopyAuthInstallPreflightOptions
 
 # AMDeviceCopyDeviceIdentifier - returns same value as AMDeviceGetName
 
@@ -224,7 +224,7 @@ AMDeviceCopyDeviceLocation = MobileDevice.AMDeviceCopyDeviceLocation
 AMDeviceCopyDeviceLocation.restype = c_long
 AMDeviceCopyDeviceLocation.argtypes = [AMDeviceRef]
 
-# TODO: _AMDeviceCopyProvisioningProfiles
+# XXX _AMDeviceCopyProvisioningProfiles
 
 AMDeviceCopyValue = MobileDevice.AMDeviceCopyValue
 AMDeviceCopyValue.restype = CFDictionaryRef
@@ -235,7 +235,7 @@ AMDeviceCopyValue.argtypes = [AMDeviceRef, CFStringRef, CFStringRef]
 # AMDeviceCreateFromProperties - not needed as we don't directly create devices
 # AMDeviceCreateHouseArrestService - we only need StartHouseArrestService
 
-# TODO: _AMDeviceCreateWakeupToken
+# XXX _AMDeviceCreateWakeupToken
 
 AMDeviceDeactivate = MobileDevice.AMDeviceDeactivate
 AMDeviceDeactivate.restype = mach_error_t
@@ -269,7 +269,7 @@ AMDeviceGetName.argtypes = [AMDeviceRef]
 
 # AMDeviceGetTypeID - dont need; returns the CFTypeID for AMDeviceRef
 
-# TODO: AMDeviceGetUserInfo - no idea; returns AMDeviceRef + 96
+# XXX AMDeviceGetUserInfo - no idea; returns AMDeviceRef + 96
 
 AMDeviceGetWirelessBuddyFlags = MobileDevice.AMDeviceGetWirelessBuddyFlags
 AMDeviceGetWirelessBuddyFlags.restype = mach_error_t
@@ -287,7 +287,7 @@ AMDeviceInstallApplication.argtypes = [
 
 # AMDeviceInstallPackage - appears to be legacy install (uses Nikita)
 
-# TODO: AMDeviceInstallProvisioningProfile
+# XXX AMDeviceInstallProvisioningProfile
 
 AMDeviceIsPaired = MobileDevice.AMDeviceIsPaired
 AMDeviceIsPaired.restype = mach_error_t
@@ -338,13 +338,13 @@ AMDeviceRelease.argtypes = [AMDeviceRef]
 
 # AMDeviceRemoveApplicationArchive - I'm guessing its the legacy version of AMDeviceSecureUninstallApplication
 
-# TODO: AMDeviceRemoveProvisioningProfile
+# XXX AMDeviceRemoveProvisioningProfile
 
 AMDeviceRemoveValue = MobileDevice.AMDeviceRemoveValue
 AMDeviceRemoveValue.restype = mach_error_t
 AMDeviceRemoveValue.argtypes = [AMDeviceRef, CFStringRef, CFStringRef]
 
-# TODO: AMDeviceSecureRestoreApplication
+# XXX AMDeviceSecureRestoreApplication
 
 # AMDeviceRetain - we don't need currently
 # AMDeviceSecureArchiveApplication - we will use the non-secure wrapper
@@ -397,7 +397,7 @@ AMDeviceTransferApplication.argtypes = [
 	c_void_p
 ]
 
-# TODO: AMDeviceTransferPath
+# XXX AMDeviceTransferPath
 
 AMDeviceUSBDeviceID = MobileDevice.AMDeviceUSBDeviceID
 AMDeviceUSBDeviceID.restype = c_long
@@ -409,8 +409,8 @@ AMDeviceUSBProductID = MobileDevice.AMDeviceUSBProductID
 AMDeviceUSBProductID.restype = c_long
 AMDeviceUSBProductID.argtypes = [AMDeviceRef]
 
-# TODO: AMDeviceUninstallApplication
-# TODO: AMDeviceUninstallPackage
+# XXX AMDeviceUninstallApplication
+# XXX AMDeviceUninstallPackage
 
 AMDeviceUnpair = MobileDevice.AMDeviceUnpair
 AMDeviceUnpair.restype = mach_error_t
@@ -430,15 +430,15 @@ AMDeviceValidatePairing = MobileDevice.AMDeviceValidatePairing
 AMDeviceValidatePairing.restype = mach_error_t
 AMDeviceValidatePairing.argtypes = [AMDeviceRef]
 
-# TODO: AMDeviceWakeupOperationCreateWithToken ??
+# XXX AMDeviceWakeupOperationCreateWithToken ??
 
 # AMDeviceWakeupOperationGetTypeID - CFTypeID for WakeOperation
 
-# TODO: AMDeviceWakeupOperationInvalidate
-# TODO: AMDeviceWakeupOperationSchedule
-# TODO: AMDeviceWakeupUsingToken
+# XXX AMDeviceWakeupOperationInvalidate
+# XXX AMDeviceWakeupOperationSchedule
+# XXX AMDeviceWakeupUsingToken
 
-# TODO: this is wrong - needs a cfdata somewhere
+# XXX this is wrong - needs a cfdata somewhere
 AMDeviceConnectByAddressAndPort = MobileDevice._AMDeviceConnectByAddressAndPort
 AMDeviceConnectByAddressAndPort.restype = mach_error_t
 AMDeviceConnectByAddressAndPort.argtypes = [
@@ -475,7 +475,7 @@ AFCConnectionOpen = MobileDevice.AFCConnectionOpen
 AFCConnectionOpen.restype = AFCError
 AFCConnectionOpen.argtypes = [c_int32, c_uint32, POINTER(AFCConnectionRef)]
 
-# TODO: not found
+# XXX not found
 #AMRecoveryModeCopyEnvironmentVariable = MobileDevice.AMRecoveryModeCopyEnvironmentVariable
 #AMRecoveryModeCopyEnvironmentVariable.restype = CFStringRef
 #AMRecoveryModeCopyEnvironmentVariable.argtypes = [
@@ -521,7 +521,7 @@ AFCRenamePath.restype = AFCError
 AFCRenamePath.argtypes = [AFCConnectionRef, c_char_p, c_char_p]
 
 
-# TODO: if ITUNES_VER >= 800
+# XXX if ITUNES_VER >= 800
 if 1:
 	AFCLinkPath = MobileDevice.AFCLinkPath
 	AFCLinkPath.restype = AFCError
