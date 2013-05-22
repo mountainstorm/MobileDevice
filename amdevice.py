@@ -458,7 +458,7 @@ def handle_devices(factory):
 		return d
 
 	Arguments:
-	factory - the callback function, called on device arrival
+	factory -- the callback function, called on device arrival
 
 	Error:
 	Raises a RuntimeError on error
@@ -493,7 +493,7 @@ def list_devices(waittime=0.1):
 	currently connected; waiting at least waittime for them to be discovered.
 
 	Arguments:
-	waittime - time to wait for devices to be discovered (default 0.1 seconds)
+	waittime -- time to wait for devices to be discovered (default 0.1 seconds)
 	'''
 	# XXX: what do I need to release
 	devices = {}
@@ -516,6 +516,13 @@ def list_devices(waittime=0.1):
 
 
 def argparse_parse(scope):
+	u'''Provides basic argument parsing functionality (listing and selection of 
+	devices).  Will call any methods in scope whose keys start with 
+	"register_argparse_" and call them with the argument parser
+
+	Arguments:
+	scope -- a dictionary of name -> functions
+	'''
 	import os
 	import sys
 	import argparse
