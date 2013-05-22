@@ -377,7 +377,7 @@ def CFTypeFrom(value):
 			byref(kCFTypeArrayCallBacks)
 		)
 	elif isinstance(value, datetime.datetime):
-		retval = CFDateCreate(None, value.time()) # TODO: sort out the origin
+		retval = CFDateCreate(None, value.time()) # XXX sort out the origin
 	else:
 		raise RuntimeError(value, type(value))
 
@@ -431,7 +431,7 @@ def CFTypeTo(value):
 
 	else:
 		CFShow(value)
-		raise RuntimeError(value, type(value), typeid)
+		print(u'RuntimeError(',value, type(value), typeid)
 	return retval
 
 
