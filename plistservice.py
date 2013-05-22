@@ -51,7 +51,9 @@ class PlistService(object):
 
 
 	def _recvmsg(self):
-		l = struct.unpack(u'>I'.encode(u'utf-8'), os.read(self.s, 4))[0]
+		length = os.read(self.s, 4)
+		#print length, length.encode(u'hex')
+		l = struct.unpack(u'>I'.encode(u'utf-8'), length)[0]
 		reply = ''
 		left = l
 		while left > 0:
