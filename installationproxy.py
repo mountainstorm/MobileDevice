@@ -88,20 +88,31 @@ class InstallationProxy(PlistService):
 	# TODO: archive, restore, etc
 
 
-if __name__ == u'__main__':
+
+def register_argparse_install(cmdargs):
+	import argparse
+	import sys
 	import pprint
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		ip = InstallationProxy(d)
 
-		#pprint.pprint(ip.lookup_applications())
-		AMDSetLogLevel(0xff)
-		ip.install_application(u'MobileReplayer.app')
-		AMDSetLogLevel(0x0)
+	# AMDSetLogLevel(0xff)
+	# AMDSetLogLevel(0x0)
 
-		ip.disconnect()
-		return d
-	
-	handle_devices(factory)
+	def cmd_browse(args, dev):
+		pxy = InstallationProxy(dev)
+		pprint.pprint(pxy.lookup_applications())
+		pxy.disconnect()
+
+	installparser = cmdargs.add_parser(
+		u'install', 
+		help=u'installation proxy commands'
+	)
+	installcmd = installparser.add_subparsers()
+
+	# browse command
+	browsecmd = installcmd.add_parser(
+		u'browse',
+		help=u'launches an application'
+	)
+	browsecmd.set_defaults(func=cmd_browse)
+
 
