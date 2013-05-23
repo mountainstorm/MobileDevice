@@ -195,6 +195,15 @@ def register_argparse_afc(cmdargs):
 		d.write(s.read())
 		s.close()
 		d.close()
+		afc.disconnect()
+
+	def cmd_view(args, dev):
+		afc = get_afc(args, dev)
+		s = afc.open(args.path, u'r')
+		d = s.readall()
+		s.close()
+		afc.disconnect()		
+		print(d)
 
 	# afc command
 	afcparser = cmdargs.add_parser(
@@ -318,24 +327,14 @@ def register_argparse_afc(cmdargs):
 	)
 	putcmd.set_defaults(func=cmd_put)
 
-#if __name__ == u'__main__':
-#	import sys
-#
-#	
-#	def factory(dev):
-#		d = AMDevice(dev)
-#		d.connect()
-#		afc = AFCMediaDirectory(d)
-#		printdir(afc, u'/') # recursive print of all files visible
-#
-#		AMDSetLogLevel(0xff)
-#		afc.transfer_application(u'/Users/cooper/Documents/Dev/iOS/DeveloperDiskImg/Applications/MobileReplayer.app')
-#		AMDSetLogLevel(0x0)
-#
-#		printdir(afc, u'/') # recursive print of all files visible
-#
-#		afc.disconnect()
-#		return d
-#	
-#	handle_devices(factory)
+	# view
+	viewcmd = afccmd.add_parser(
+		u'view',
+		help=u'retrieve a file from the device and preview as txt'
+	)
+	viewcmd.add_argument(
+		u'path',
+		help=u'path on the device to retrieve'
+	)
+	viewcmd.set_defaults(func=cmd_view)
 
