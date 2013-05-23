@@ -41,5 +41,5 @@ from syslog import *
 from webkitinspector import *
 from debug import *
 from assertionagent import *
-
+from pcap import *
 
