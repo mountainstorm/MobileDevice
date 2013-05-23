@@ -28,7 +28,14 @@ import struct
 
 
 class PlistService(object):
-	def __init__(self, amdevice, servicenames, format=kCFPropertyListBinaryFormat_v1_0):
+	def __init__(
+			self, 
+			amdevice, 
+			servicenames, 
+			format=kCFPropertyListBinaryFormat_v1_0,
+			bigendian=False
+		):
+		self.bigendian = bigendian
 		self.format = format
 		self.s = None
 		self.dev = amdevice
@@ -45,24 +52,32 @@ class PlistService(object):
 		os.close(self.s)
 
 	def _sendmsg(self, msg):
+		endian = u'>I'
+		if self.bigendian:
+			endian = u'<I'
 		data = dict_to_plist_encoding(msg, self.format)
-		os.write(self.s, struct.pack(u'>I'.encode(u'utf-8'), len(data)))
+		os.write(self.s, struct.pack(endian.encode(u'utf-8'), len(data)))
 		os.write(self.s, data)
 
 
 	def _recvmsg(self):
+		retval = None
+		endian = u'>I'
+		if self.bigendian:
+			endian = u'<I'
 		length = os.read(self.s, 4)
-		#print length, length.encode(u'hex')
-		l = struct.unpack(u'>I'.encode(u'utf-8'), length)[0]
-		reply = ''
-		left = l
-		while left > 0:
-			r = os.read(self.s, left) 
-			if r is None:
-				raise RuntimeError(u'Unable to read reply')
-			reply += r
-			left -= len(r)
-		return dict_from_plist_encoding(reply, self.format)
+		if length is not None and len(length) == 4:
+			l = struct.unpack(endian.encode(u'utf-8'), length)[0]
+			reply = ''
+			left = l
+			while left > 0:
+				r = os.read(self.s, left) 
+				if r is None:
+					raise RuntimeError(u'Unable to read reply')
+				reply += r
+				left -= len(r)
+			retval = dict_from_plist_encoding(reply, self.format)
+		return retval
 
 
 
