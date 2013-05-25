@@ -70,6 +70,7 @@ def register_argparse_afc(cmdargs):
 	import afcroot
 	import time
 	import posixpath
+	import pprint
 
 	def printdir(afc, path, recurse):
 		dirlist = []
@@ -203,7 +204,11 @@ def register_argparse_afc(cmdargs):
 		d = s.readall()
 		s.close()
 		afc.disconnect()		
-		print(d)
+		p = dict_from_plist_encoding(d)
+		if p is not None:
+			pprint.pprint(p)
+		else:
+			print(d)
 
 	# afc command
 	afcparser = cmdargs.add_parser(
