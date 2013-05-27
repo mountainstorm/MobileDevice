@@ -198,17 +198,31 @@ def register_argparse_afc(cmdargs):
 		d.close()
 		afc.disconnect()
 
-	def cmd_view(args, dev):
-		afc = get_afc(args, dev)
-		s = afc.open(args.path, u'r')
+	def preview_file(afc, path):
+		s = afc.open(path, u'r')
 		d = s.readall()
 		s.close()
-		afc.disconnect()		
 		p = dict_from_plist_encoding(d)
 		if p is not None:
 			pprint.pprint(p)
 		else:
 			print(d)
+		# XXX add extra preview code for other common types
+
+	def cmd_view(args, dev):
+		afc = get_afc(args, dev)
+		path = args.path.decode(u'utf-8')
+		files = []
+		try:
+			# check for directory preview
+			for f in afc.listdir(path):
+				files.append(posixpath.join(path, f))
+		except OSError:
+			files = [path] # its not a directory
+
+		for f in files:
+			preview_file(afc, f)
+		afc.disconnect()		
 
 	# afc command
 	afcparser = cmdargs.add_parser(
