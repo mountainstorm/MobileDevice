@@ -215,11 +215,13 @@ def register_argparse_diag(cmdargs):
 		else:
 			print(diag.mobilegestalt(Diagnostics.gestalt_names))
 		diag.disconnect()
+		dev.disconnect()
 
 	def cmd_all(args, dev):
 		diag = Diagnostics(dev)
 		pprint.pprint(diag.diagnostics(Diagnostics.TYPE_ALL))
 		diag.disconnect()
+		dev.disconnect()
 
 	def cmd_ioreg(args, dev):
 		diag = Diagnostics(dev)
@@ -235,11 +237,13 @@ def register_argparse_diag(cmdargs):
 			cls = args.cls.decode(u'utf-8')
 		ioreg_dmp(diag.ioregistry(plane, name, cls)[u'IORegistry'])
 		diag.disconnect()		
+		dev.disconnect()
 
 	def cmd_sleep(args, dev):
 		diag = Diagnostics(dev)
 		diag.sleep()
 		diag.disconnect()
+		dev.disconnect()
 
 	def cmd_restart(args, dev):
 		diag = Diagnostics(dev)
@@ -248,6 +252,7 @@ def register_argparse_diag(cmdargs):
 		else:
 			diag.restart([Diagnostics.ACTION_DISPLAY_PASS])
 		diag.disconnect()
+		dev.disconnect()
 
 	def cmd_shutdown(args, dev):
 		diag = Diagnostics(dev)
@@ -257,6 +262,7 @@ def register_argparse_diag(cmdargs):
 		else:
 			diag.shutdown([Diagnostics.ACTION_DISPLAY_PASS])
 		diag.disconnect()
+		dev.disconnect()
 
 	# diag command
 	diagparser = cmdargs.add_parser(

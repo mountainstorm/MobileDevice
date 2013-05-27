@@ -82,6 +82,7 @@ def register_argparse_springboard(cmdargs):
 		sb = Springboard(dev)
 		data = sb.get_iconpngdata(args.appid.decode(u'utf-8'))
 		sb.disconnect()
+		dev.disconnect()
 		f = open(args.path.decode(u'utf-8'), u'wb')
 		f.write(data)
 		f.close()
@@ -90,6 +91,8 @@ def register_argparse_springboard(cmdargs):
 		sb = Springboard(dev)
 		orient = sb.get_interface_orientation()
 		sb.disconnect()
+		dev.disconnect()
+
 		orient_str = {
 			Springboard.PORTRAIT: u'↑',
 			Springboard.PORTRAIT_UPSIDE_DOWN: u'↓',
@@ -102,6 +105,7 @@ def register_argparse_springboard(cmdargs):
 		sb = Springboard(dev)
 		data = sb.get_wallpaper_pngdata()
 		sb.disconnect()
+		dev.disconnect()
 		f = open(args.path.decode(u'utf-8'), u'wb')
 		f.write(data)
 		f.close()
@@ -173,6 +177,7 @@ def register_argparse_springboard(cmdargs):
 		sb = Springboard(dev)
 		state = sb.get_iconstate()
 		sb.disconnect()
+		dev.disconnect()		
 		print print_icons(state)
 
 	springboardparser = cmdargs.add_parser(

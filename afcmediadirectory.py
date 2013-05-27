@@ -148,16 +148,19 @@ def register_argparse_afc(cmdargs):
 		afc = get_afc(args, dev)
 		printdir(afc, args.path.decode(u'utf-8'), args.r)
 		afc.disconnect()
+		dev.disconnect()
 
 	def cmd_mkdir(args, dev):
 		afc = get_afc(args, dev)
 		afc.mkdir(args.path)
 		afc.disconnect()
+		dev.disconnect()
 
 	def cmd_rm(args, dev):
 		afc = get_afc(args, dev)
 		afc.remove(args.path)
 		afc.disconnect()
+		dev.disconnect()
 
 	def cmd_ln(args, dev):
 		# XXX unable to make linking work?
@@ -170,6 +173,7 @@ def register_argparse_afc(cmdargs):
 		else:
 			afc.link(args.path, args.link)
 		afc.disconnect()
+		dev.disconnect()
 
 	def cmd_get(args, dev):
 		dest = args.dest
@@ -184,6 +188,7 @@ def register_argparse_afc(cmdargs):
 		d.close()
 		s.close()
 		afc.disconnect()
+		dev.disconnect()
 
 	def cmd_put(args, dev):
 		if args.path[-1] == os.sep:
@@ -197,6 +202,7 @@ def register_argparse_afc(cmdargs):
 		s.close()
 		d.close()
 		afc.disconnect()
+		dev.disconnect()
 
 	def preview_file(afc, path):
 		s = afc.open(path, u'r')
@@ -222,7 +228,8 @@ def register_argparse_afc(cmdargs):
 
 		for f in files:
 			preview_file(afc, f)
-		afc.disconnect()		
+		afc.disconnect()
+		dev.disconnect()		
 
 	# afc command
 	afcparser = cmdargs.add_parser(

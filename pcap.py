@@ -129,6 +129,7 @@ def register_argparse_pcap(cmdargs):
 			pass
 		pcap.close()
 		pcapd.disconnect()
+		dev.disconnect()
 
 	pcapcmd = cmdargs.add_parser(
 		u'pcap', 

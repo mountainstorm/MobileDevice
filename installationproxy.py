@@ -101,6 +101,7 @@ def register_argparse_install(cmdargs):
 		pxy = InstallationProxy(dev)
 		pprint.pprint(pxy.lookup_applications())
 		pxy.disconnect()
+		dev.disconnect()
 
 	installparser = cmdargs.add_parser(
 		u'install', 

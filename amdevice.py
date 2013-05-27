@@ -642,6 +642,7 @@ def register_argparse_dev(cmdargs):
 		print(u'  location: 0x%x' % dev.get_location())
 		print(u'  usb device id: 0x%x' % dev.get_usb_deviceid())
 		print(u'  usb product id: 0x%x' % dev.get_usb_productid())
+		dev.disconnect()
 		
 	def cmd_get(args, dev):
 		if args.domain is not None or args.key is not None:
@@ -663,6 +664,7 @@ def register_argparse_dev(cmdargs):
 			for domain in AMDevice.value_domains:
 				output[domain] = dev.get_value(domain)
 			pprint.pprint(output)
+		dev.disconnect()
 
 	def cmd_set(args, dev):
 		domain = None
@@ -670,15 +672,18 @@ def register_argparse_dev(cmdargs):
 			domain = args.domain.decode(u'utf-8')
 		# XXX add support for non-string types; bool next
 		dev.set_value(domain, args.key.decode(u'utf-8'), args.value.decode(u'utf-8'))
+		dev.disconnect()
 
 	def cmd_del(args, dev):
 		domain = None
 		if args.domain is not None:
 			domain = args.domain.decode(u'utf-8')
 		dev.remove_value(domain, args.key.decode(u'utf-8'))
+		dev.disconnect()
 
 	def cmd_unpair(args, dev):
 		dev.unpair()
+		dev.disconnect()
 
 	def cmd_buddy(args, dev):
 		if args.wifi is not None or args.setid is not None:
@@ -694,6 +699,7 @@ def register_argparse_dev(cmdargs):
 				s += u'BUDDY_SETID'
 			s += u' (0x%x)' % flags
 			print(u'  wireless buddy flags: %s' % s)
+		dev.disconnect()
 
 	def cmd_relay(args, dev):
 		class Relay(object):
@@ -822,6 +828,7 @@ def register_argparse_dev(cmdargs):
 
 		for relay in relays:
 			relay.close()
+		dev.disconnect()
 
 
 	# standard dev commands

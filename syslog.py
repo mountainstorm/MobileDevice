@@ -61,6 +61,7 @@ def register_argparse_syslog(cmdargs):
 				break
 			sys.stdout.write(msg)
 		sl.disconnect()
+		dev.disconnect()
 
 	# syslog command
 	syslogcmd = cmdargs.add_parser(

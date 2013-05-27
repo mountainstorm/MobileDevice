@@ -264,6 +264,7 @@ def register_argparse_debugserver(cmdargs):
 		applist = DebugAppList(dev)
 		al = applist.get_applist()
 		applist.disconnect()
+		dev.disconnect()
 
 		rows = []
 		colmax = [0, 0, 0]
@@ -319,6 +320,7 @@ def register_argparse_debugserver(cmdargs):
 		else:
 			gdb.set_run() # spawn
 		gdb.run()
+		dev.disconnect()
 
 	debugparser = cmdargs.add_parser(
 		u'debug', 
