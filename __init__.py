@@ -43,4 +43,5 @@ from debug import *
 from assertionagent import *
 from pcap import *
 from notificationproxy import *
+from crashmover import *
 

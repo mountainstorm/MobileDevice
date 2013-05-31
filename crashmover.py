@@ -22,17 +22,54 @@
 # SOFTWARE.
 
 
+from MobileDevice import *
 from amdevice import *
-from afc import *
+from plistservice import *
+import os
+import time
 
 
-class AFCCrashLogDirectory(AFC):
-	u'''provides access to the /var/mobile/Library/Logs/CrashReporter dir'''
+class CrashMover(object):
+	u'''Moves crash logs from their various scattered locations into the afc 
+	crash log directory'''
 
 	def __init__(self, amdevice):
-		s = amdevice.start_service(AMSVC_CRASH_REPORT_COPY_MOBILE)
-		if s is None:
-			raise RuntimeError(u'Unable to launch:', AMSVC_CRASH_REPORT_COPY_MOBILE)
-		AFC.__init__(self, s)
+		self.s = amdevice.start_service(u'com.apple.crashreportmover')
+		if self.s is None:
+			raise RuntimeError(u'Unable to launch: com.apple.crashreportmover')
+
+	def disconnect(self):
+		os.close(self.s)
+
+	def move_crashlogs(self, extensions=None):
+		u'''Moves all crash logs into the afc crash log directory
+
+		Arguments:
+		extensions -- if present a list of crash file extensions to move 
+					  XXX not currently working
+		'''
+		# XXX should we wait just in case?
+		time.sleep(2)
+		buf = os.read(self.s, 1)
+		while True:
+			buf += os.read(self.s, 1)
+			if buf == 'ping':
+				break # done!
 
 
+def register_argparse_crashmover(cmdargs):
+	import argparse
+	import sys
+
+	def cmd_crashmove(args, dev):
+		cm = CrashMover(dev)
+		cm.move_crashlogs()
+		cm.disconnect()
+		dev.disconnect()
+
+	# cmd_crashmove command
+	crashmovecmd = cmdargs.add_parser(
+		u'crashmove', 
+		help=u'moves crash logs into the afc directory'
+	)
+	crashmovecmd.set_defaults(func=cmd_crashmove)
