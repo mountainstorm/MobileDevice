@@ -82,6 +82,8 @@ def register_argparse_crashmover(cmdargs):
 					os.mkdir(os.path.join(dest, name))
 				except OSError:
 					pass # it already exists
+			elif info.st_ifmt == stat.S_IFLNK:
+				pass # XXX handle symlinks e.g. LatestCrash*
 			else:
 				s = afc.open(posixpath.join(path, name), u'r')
 				d = open(os.path.join(dest, name), u'w+')
