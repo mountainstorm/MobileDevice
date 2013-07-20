@@ -26,6 +26,7 @@ from MobileDevice import *
 import socket
 import select
 import os
+import glob
 
 
 class AMDevice(object):
@@ -419,22 +420,58 @@ class AMDevice(object):
 		Raises RuntimeError if a suitable path can be found
 		'''
 		# XXX: Windows version
-		version = self.get_value(name=u'ProductVersion')
-		build = self.get_value(name=u'BuildVersion')
-		home = os.environ[u'HOME']
-		ds = os.path.join(
-			home, 
-			u'/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/'
+		support_paths = glob.glob(
+			u'/Applications/Xcode*.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/*'
 		)
-		#print u'%s %s' % (version, build)
-		path = os.path.join(ds, u'%s (%s)' % (version, build))
-		if not os.path.exists(path):
-			# try it without the build no
-			path = os.path.join(ds, u'%s' % (version))
-			if not os.path.exists(path):
-				# XXX perhaps add support for finding the next best image
-				raise RuntimeError(u'Unable to find device support path')
-		return path
+		# process all the support paths to extract all the components
+		support = []
+		for path in support_paths:
+			name = os.path.split(path)[1]
+			parts = name.split(u' ')
+			version = parts[0]
+			build = None
+			if len(parts) != 1:
+				build = parts[1].replace(u'(', '').replace(u')', '')
+			version_parts = version.split(u'.')
+			major_version = version_parts[0]
+			minor_version = version_parts[1]
+			support.append({
+				u'version': version,
+				u'major_version': major_version,
+				u'minor_version': minor_version,
+				u'build': build,
+				u'path': path
+			})
+	
+		# get the device info
+		version = self.get_value(name=u'ProductVersion')
+		version_parts = version.split(u'.')
+		major_version = version_parts[0]
+		minor_version = version_parts[1]
+
+		build = self.get_value(name=u'BuildVersion')
+
+		# lets find the best support path.
+		support_path = None
+		for s in support:
+			# version match is more important than build
+			if s[u'major_version'] == major_version:
+				if support_path is None:
+					support_path = s
+				else:
+					# is this better than the last match?
+					if s[u'minor_version'] == minor_version:
+						if s[u'build'] == build:
+							# perfect match
+							support_path = s
+						else:
+							if support_path[u'build'] != build:
+								# we're still better than existing match
+								support_path = s
+
+		if support_path is None:
+			raise RuntimeError(u'Unable to find device support path')
+		return support_path[u'path']
 
 	def find_developer_disk_image_path(self, device_support_path=None):
 		u'''Returns the best debug disk image for the device
