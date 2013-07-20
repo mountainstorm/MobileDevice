@@ -28,10 +28,6 @@ import platform
 from CoreFoundation import *
 
 
-# Copied from MobileDevice.h
-# http://theiphonewiki.com/wiki/MobileDevice_Library#MobileDevice_Header_.28MobileDevice.h.29
-
-
 if platform.system() == u'Darwin':
 	MobileDevice = CDLL(u'/System/Library/PrivateFrameworks/MobileDevice.framework/MobileDevice')
 elif platform.system() == u'Windows':
