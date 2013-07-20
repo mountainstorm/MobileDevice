@@ -248,15 +248,26 @@ def register_argparse_debugserver(cmdargs):
 	import imagemounter
 
 	def load_developer_dmg(args, dev):
-		# first find and mount the developer disk image
-		im = imagemounter.ImageMounter(dev)
-		imagepath = None
-		if args.device_support_path:
-			imagepath = dev.find_developer_disk_image_path(
-				args.device_support_path.decode(u'utf-8')
-			)
-		im.mount(imagepath)
-		im.disconnect()
+		if not args.advanced:
+			# we only load in non-advanced mode
+			try:
+				# we're doing this as, for some reason, the checking load image
+				# does isn;t very good - so if we don;t we end up transfering 
+				# the image every time; which is slow and generates tonnes of 
+				# log messages
+				applist = DebugAppList(dev)
+				applist.disconnect()
+				# it's already loaded
+			except:
+				# its not ... so find and load the disk image
+				im = imagemounter.ImageMounter(dev)
+				imagepath = None
+				if args.device_support_path:
+					imagepath = dev.find_developer_disk_image_path(
+						args.device_support_path.decode(u'utf-8')
+					)
+				im.mount(imagepath)
+				im.disconnect()
 
 	def cmd_applist(args, dev):
 		load_developer_dmg(args, dev)
