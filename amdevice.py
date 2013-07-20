@@ -75,8 +75,12 @@ class AMDevice(object):
 		if retval != MDERR_OK:
 			raise RuntimeError(u'Unable to activate the device')
 
-	def connect(self):
-		u'''Connects to the device, creates pairing record and starts a session
+	def connect(self, advanced=False):
+		u'''Connects to the device, and starts a session
+
+		Arguments:
+		advanced -- if not set, this will create a pairing record if required 
+					(default: false)
 
 		Error:
 		Raises RuntimeError describing the error condition
@@ -84,15 +88,12 @@ class AMDevice(object):
 		if AMDeviceConnect(self.dev) != MDERR_OK: 
 			raise RuntimeError(u'Unable to connect to device')
 
-		if AMDeviceIsPaired(self.dev) != 1:
-			if AMDevicePair(self.dev) != MDERR_OK:
-				raise RuntimeError(u'If your phone is locked with a passcode, unlock then reconnect it')
-
-		if AMDeviceValidatePairing(self.dev) != MDERR_OK: 
-			raise RuntimeError(u'Unable to validate pairing')
+		if not advanced:
+			self.pair()
 
 		if AMDeviceStartSession(self.dev) != MDERR_OK: 
-			raise RuntimeError(u'Unable to start session')
+			if not advanced:
+				raise RuntimeError(u'Unable to start session')
 
 	def get_deviceid(self):
 		u'''Retrieves the device identifier; labeled "Identifier" in the XCode
@@ -358,6 +359,20 @@ class AMDevice(object):
 			raise RuntimeError(u'No usb device id')
 		return retval
 
+	def pair(self):
+		u'''Pairs the device to the host
+
+		Error:
+		Raises RuntimeError on error
+		'''
+		if AMDeviceIsPaired(self.dev) != 1:
+			if AMDevicePair(self.dev) != MDERR_OK:
+				raise RuntimeError(u'If your phone is locked with a passcode, unlock then reconnect it')
+
+		if AMDeviceValidatePairing(self.dev) != MDERR_OK: 
+			raise RuntimeError(u'Unable to validate pairing')
+
+
 	def unpair(self):
 		u'''Unpairs device from host WARNING: you probably dont want to call 
 		this
@@ -530,21 +545,38 @@ def argparse_parse(scope):
 	class CmdArguments(object):
 		def __init__(self):
 			self._devs = list_devices()
-			for v in self._devs.values():
-				v.connect()
 
 			self._parser = argparse.ArgumentParser()
 
 			self._parser.add_argument(
+				u'-x',
+				dest=u'advanced',
+				action=u'store_true',
+				help=u'''enables advanced mode; where helpful tasks are not done 
+				automatically; e.g. pairing if your not already paired'''
+			)
+
+			group = self._parser.add_mutually_exclusive_group()
+			group.add_argument(
 				u'-d',
 				metavar=u'devid',
 				dest=u'device_idx',
 				choices=range(len(self._devs.keys())),
 				type=int,
 				action=u'store',
-				help=u'only operate on the specified device'
+				help=u'operate on the specified device'
 			)
 			
+			group.add_argument(
+				u'-i',
+				metavar=u'identifier',
+				dest=u'device_id',
+				choices=self._devs.keys(),
+				type=str,
+				action=u'store',
+				help=u'operate on the specified device'
+			)
+
 			# add subparsers for commands
 			self._subparsers = self._parser.add_subparsers(
 				help=u'sub-command help; use <cmd> -h for help on sub commands'
@@ -557,11 +589,6 @@ def argparse_parse(scope):
 			)
 			listparser.set_defaults(listing=True)
 
-
-		def __del__(self):
-			for v in self._devs.values():
-				v.disconnect()
-
 		def add_parser(self, *args, **kwargs):
 			return self._subparsers.add_parser(*args, **kwargs)
 
@@ -573,9 +600,16 @@ def argparse_parse(scope):
 
 			else:
 				if len(self._devs) > 0:
+					devs = sorted(self._devs.keys())
+					if self.device_id is not None:
+						identifier = self.device_id.decode(u'utf-8')
+						for i in range(len(devs)):
+							if devs[i] == identifier:
+								self.device_idx = i
+
 					if self.device_idx is None:
 						self.device_idx = 0 # default to first device
-					k = sorted(self._devs.keys())[self.device_idx]
+					k = devs[self.device_idx]
 					v = self._devs[k]
 					name = u''
 					try:
@@ -587,7 +621,9 @@ def argparse_parse(scope):
 						v.get_deviceid(), 
 						name.decode(u'utf-8')
 					))
+					v.connect(args.advanced)
 					args.func(args, v)
+					v.disconnect()
 
 		def _print_devices(self):
 			retval = u'device list:\n'
@@ -642,7 +678,6 @@ def register_argparse_dev(cmdargs):
 		print(u'  location: 0x%x' % dev.get_location())
 		print(u'  usb device id: 0x%x' % dev.get_usb_deviceid())
 		print(u'  usb product id: 0x%x' % dev.get_usb_productid())
-		dev.disconnect()
 		
 	def cmd_get(args, dev):
 		if args.domain is not None or args.key is not None:
@@ -664,7 +699,6 @@ def register_argparse_dev(cmdargs):
 			for domain in AMDevice.value_domains:
 				output[domain] = dev.get_value(domain)
 			pprint.pprint(output)
-		dev.disconnect()
 
 	def cmd_set(args, dev):
 		domain = None
@@ -672,18 +706,18 @@ def register_argparse_dev(cmdargs):
 			domain = args.domain.decode(u'utf-8')
 		# XXX add support for non-string types; bool next
 		dev.set_value(domain, args.key.decode(u'utf-8'), args.value.decode(u'utf-8'))
-		dev.disconnect()
 
 	def cmd_del(args, dev):
 		domain = None
 		if args.domain is not None:
 			domain = args.domain.decode(u'utf-8')
 		dev.remove_value(domain, args.key.decode(u'utf-8'))
-		dev.disconnect()
+
+	def cmd_pair(args, dev):
+		dev.pair()
 
 	def cmd_unpair(args, dev):
 		dev.unpair()
-		dev.disconnect()
 
 	def cmd_buddy(args, dev):
 		if args.wifi is not None or args.setid is not None:
@@ -699,7 +733,6 @@ def register_argparse_dev(cmdargs):
 				s += u'BUDDY_SETID'
 			s += u' (0x%x)' % flags
 			print(u'  wireless buddy flags: %s' % s)
-		dev.disconnect()
 
 	def cmd_relay(args, dev):
 		class Relay(object):
@@ -828,7 +861,6 @@ def register_argparse_dev(cmdargs):
 
 		for relay in relays:
 			relay.close()
-		dev.disconnect()
 
 
 	# standard dev commands
@@ -901,6 +933,13 @@ def register_argparse_dev(cmdargs):
 		help=u'the domain of the key to delete'
 	)
 	delcmd.set_defaults(func=cmd_del)
+
+	# pair
+	paircmd = devcmds.add_parser(
+		u'pair',
+		help=u'pair the device to this host'
+	)
+	paircmd.set_defaults(func=cmd_pair)
 
 	# unpair
 	unpaircmd = devcmds.add_parser(
