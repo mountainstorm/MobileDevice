@@ -175,7 +175,6 @@ def register_argparse_webinspector(cmdargs):
 
 		print wi.forwardSocketData(conn, app, ident, session, json.dumps(data))
 		wi.disconnect()
-		dev.disconnect()
 
 	webparser = cmdargs.add_parser(
 		u'web', 

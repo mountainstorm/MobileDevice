@@ -89,7 +89,6 @@ def register_argparse_filerelay(cmdargs):
 		f.write(fr.get_filesets(sets))
 		f.close()
 		fr.disconnect()
-		dev.disconnect()
 
 	# filerelay command
 	filerelaycmd = cmdargs.add_parser(

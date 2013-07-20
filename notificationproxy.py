@@ -73,13 +73,11 @@ def register_argparse_notifyproxy(cmdargs):
 		notify = NotificationProxy(dev)
 		notify.post_notificaiton(args.name.decode(u'utf-8'))
 		notify.disconnect()
-		dev.disconnect()
 
 	def cmd_shutdown(args, dev):
 		notify = NotificationProxy(dev)
 		notify.shutdown()
 		notify.disconnect()
-		dev.disconnect()
 
 	def cmd_observe(args, dev):
 		notify = NotificationProxy(dev)
@@ -93,8 +91,6 @@ def register_argparse_notifyproxy(cmdargs):
 		except:
 			pass
 		notify.disconnect()
-		dev.disconnect()
-
 
 	notifyparser = cmdargs.add_parser(
 		u'notify',

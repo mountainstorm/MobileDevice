@@ -90,13 +90,11 @@ def register_argparse_mount(cmdargs):
 		im = ImageMounter(dev)
 		im.mount()
 		im.disconnect()
-		dev.disconnect()
 
 	def cmd_mountcustom(args, dev):
 		im = ImageMounter(dev)
 		im.mount(args.path.decode(u'utf-8'))
 		im.disconnect()		
-		dev.disconnect()
 
 	mountparser = cmdargs.add_parser(
 		u'mount',

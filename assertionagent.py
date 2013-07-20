@@ -76,7 +76,6 @@ def register_argparse_assertionagent(cmdargs):
 		)
 		time.sleep(timeout)
 		ass.disconnect()
-		dev.disconnect()
 
 	assertcmd = cmdargs.add_parser(
 		u'assert', 
