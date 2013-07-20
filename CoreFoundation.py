@@ -84,6 +84,7 @@ CFNumberRef = c_void_p
 CFNumberType = c_long
 
 kCFNumberLongType = 10
+kCFNumberSInt32Type = 3
 kCFNumberDoubleType = 13
 
 CFNumberGetTypeID = CoreFoundation.CFNumberGetTypeID
@@ -112,6 +113,7 @@ CFStringRef = c_void_p
 CFStringEncoding = c_uint32
 
 kCFStringEncodingUTF8 = 0x08000100
+kCFStringEncodingUTF16LE = 0x14000100
 kCFStringEncodingUnicode = 0x0100
 
 CFSTR = CoreFoundation.__CFStringMakeConstantString
@@ -125,6 +127,16 @@ CFStringGetTypeID.argtypes = []
 CFStringCreateWithCString = CoreFoundation.CFStringCreateWithCString
 CFStringCreateWithCString.restype = CFStringRef
 CFStringCreateWithCString.argtypes = [CFAllocatorRef, c_char_p, CFStringEncoding]
+
+CFStringCreateWithBytes = CoreFoundation.CFStringCreateWithBytes
+CFStringCreateWithBytes.restype = CFStringRef
+CFStringCreateWithBytes.argtypes = [
+	CFAllocatorRef,
+	POINTER(c_uint8),
+	CFIndex,
+	CFStringEncoding,
+	c_bool
+]
 
 CFStringGetMaximumSizeForEncoding = CoreFoundation.CFStringGetMaximumSizeForEncoding
 CFStringGetMaximumSizeForEncoding.restype = CFIndex
@@ -216,6 +228,10 @@ CFDictionaryGetValue.argtypes = [CFDictionaryRef, CFTypeRef]
 kCFTypeDictionaryKeyCallBacks = c_void_p.in_dll(CoreFoundation, u'kCFTypeDictionaryKeyCallBacks')
 kCFTypeDictionaryValueCallBacks = c_void_p.in_dll(CoreFoundation, u'kCFTypeDictionaryValueCallBacks')
 
+CFDictionarySetValue = CoreFoundation.CFDictionarySetValue
+CFDictionarySetValue.restype = None
+CFDictionarySetValue.argtypes = [CFDictionaryRef, CFTypeRef, CFTypeRef]
+
 
 # CFDate
 CFDateRef = c_void_p
@@ -288,6 +304,7 @@ kCFTypeArrayCallBacks = c_void_p.in_dll(CoreFoundation, u'kCFTypeArrayCallBacks'
 
 
 # CFRunLoop
+CFRunLoopSourceRef = c_void_p
 CFRunLoopRef = c_void_p
 kCFRunLoopDefaultMode = c_void_p.in_dll(CoreFoundation, u'kCFRunLoopDefaultMode')
 
@@ -308,6 +325,10 @@ CFRunLoopRunInMode.argtypes = [
 	c_bool
 ]
 
+CFRunLoopGetCurrent = CoreFoundation.CFRunLoopGetCurrent
+CFRunLoopGetCurrent.restype = CFRunLoopRef
+CFRunLoopGetCurrent.argtypes = []
+
 CFRunLoopGetMain = CoreFoundation.CFRunLoopGetMain
 CFRunLoopGetMain.restype = CFRunLoopRef
 CFRunLoopGetMain.argtypes = []
@@ -326,6 +347,59 @@ CFCopyTypeIDDescription.restype = CFStringRef
 CFCopyTypeIDDescription.argtypes = [CFTypeID]
 
 
+# CFUUID
+CFUUIDRef = c_void_p
+
+CFUUIDGetConstantUUIDWithBytes = CoreFoundation.CFUUIDGetConstantUUIDWithBytes
+CFUUIDGetConstantUUIDWithBytes.restype = CFUUIDRef
+CFUUIDGetConstantUUIDWithBytes.argtypes = [CFAllocatorRef, 
+	c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, 
+	c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, c_uint8, c_uint8
+]
+
+class CFUUIDBytes(Structure):
+	_fields_ = [
+		(u'byte0', c_uint8),
+		(u'byte1', c_uint8),
+		(u'byte2', c_uint8),
+		(u'byte3', c_uint8),
+		(u'byte4', c_uint8),
+		(u'byte5', c_uint8),
+		(u'byte6', c_uint8),
+		(u'byte7', c_uint8),
+		(u'byte8', c_uint8),
+		(u'byte9', c_uint8),
+		(u'byte10', c_uint8),
+		(u'byte11', c_uint8),
+		(u'byte12', c_uint8),
+		(u'byte13', c_uint8),
+		(u'byte14', c_uint8),
+		(u'byte15', c_uint8)
+	]
+
+CFUUIDGetUUIDBytes = CoreFoundation.CFUUIDGetUUIDBytes
+CFUUIDGetUUIDBytes.restype = CFUUIDBytes
+CFUUIDGetUUIDBytes.argtypes = [CFUUIDRef]
+
+
+# CFSet
+CFSetRef = c_void_p
+
+CFSetGetTypeID = CoreFoundation.CFSetGetTypeID
+CFSetGetTypeID.restype = CFTypeID
+CFSetGetTypeID.argtypes = []
+
+CFSetGetCount = CoreFoundation.CFSetGetCount
+CFSetGetCount.restype = CFIndex
+CFSetGetCount.argtypes = [CFSetRef]
+
+CFSetGetValues = CoreFoundation.CFSetGetValues
+CFSetGetValues.restype = None
+CFSetGetValues.argtypes = [CFSetRef, POINTER(c_void_p)]
+
+
+
+# python/CF conversion functions
 def CFTypeFrom(value):
 	retval = None
 	if isinstance(value, str):
@@ -429,6 +503,13 @@ def CFTypeTo(value):
 	elif typeid == CFDateGetTypeID():
 		retval = datetime.datetime.fromtimestamp(CFDateGetAbsoluteTime(value)) # sort out origin
 
+	elif typeid == CFSetGetTypeID():
+		retval = set()
+		l = CFSetGetCount(value)
+		values = (c_void_p * l)()
+		CFSetGetValues(value, values)
+		for i in range(0, l):
+			retval.add(CFTypeTo(values[i]))
 	else:
 		CFShow(value)
 		print(u'RuntimeError(',value, type(value), typeid)
