@@ -25,6 +25,7 @@
 from distutils.core import setup
 import os.path
 import os
+from subprocess import check_output
 
 
 def readfile(filename):
@@ -33,10 +34,14 @@ def readfile(filename):
 	f.close()
 	return text
 
+def getcommit():
+	retval = check_output([u'git', u'rev-list', u'--all', u'--count'])
+	return retval.strip()
+
 
 setup(
 	name=u'Distutils',
-	version=u'1.0.',
+	version=u'1.0.' + getcommit(),
 	description=u'A python package, and command line tool, which wraps Apple\'s MobileDevice API - providing access to iOS devices',
 	long_description = readfile(u'README.txt'),
 	author=u'Cooper',
