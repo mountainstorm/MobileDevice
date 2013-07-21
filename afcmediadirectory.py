@@ -47,7 +47,7 @@ class AFCMediaDirectory(AFC):
 		'''
 		# Technically you could use this on any AFC connection but it only makes
 		# sense to use it on the MediaDirectory - as it hard coded moves stuff 
-		# to /PublicStaging
+		# to /PublicStaging.
 		def callback(cfdict, arg):
 			pass
 
