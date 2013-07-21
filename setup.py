@@ -36,7 +36,7 @@ def readfile(filename):
 
 setup(
 	name=u'Distutils',
-	version=u'1.0',
+	version=u'1.0.',
 	description=u'A python package, and command line tool, which wraps Apple\'s MobileDevice API - providing access to iOS devices',
 	long_description = readfile(u'README.txt'),
 	author=u'Cooper',
