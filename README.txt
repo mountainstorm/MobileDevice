@@ -11,6 +11,14 @@ You can run the project directory as a package e.g.
 
 python MobileDevice/ afc put myfile.txt /var/mobile/Media/
 
+or:
+
+python MobileDevice.zip afc put myfile.txt /var/mobile/Media/
+
+or, if you install the library using: sudo python setup.py install
+
+mdf afc put myfile.txt /var/mobile/Media/
+
 (will upload a file to the device)
 
 at any point append -h to the command line to get more help

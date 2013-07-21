@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding: utf-8
 
 # Copyright (c) 2013 Mountainstorm
@@ -22,41 +22,7 @@
 # SOFTWARE.
 
 
-from distutils.core import setup
-import os.path
-import os
+from MobileDevice import *
 
-
-def readfile(filename):
-	f = open(filename)
-	text = f.read()
-	f.close()
-	return text
-
-
-setup(
-	name=u'Distutils',
-	version=u'1.0',
-	description=u'A python package, and command line tool, which wraps Apple\'s MobileDevice API - providing access to iOS devices',
-	long_description = readfile(u'README.txt'),
-	author=u'Cooper',
-	url=u'https://github.com/mountainstorm/MobileDevice',
-	classifiers = [
-		u'Development Status :: 5 - Production/Stable',
-		u'Environment :: Console',
-		u'Environment :: MacOS X',
-		u'Intended Audience :: Developers',
-		u'License :: OSI Approved :: MIT License',
-		u'Natural Language :: English',
-		u'Operating System :: MacOS :: MacOS X',
-		u'Programming Language :: Python',
-		u'Programming Language :: Python :: 2.7',
-		u'Topic :: Security',
-		u'Topic :: Software Development :: Libraries :: Python Modules',
-		u'Topic :: Utilities',
-	],
-	license= readfile(u'LICENSE.txt'),
-	packages=['MobileDevice'],
-	package_dir={'': u'../'},
-	scripts=[u'mdf']
-)
+if __name__ == u'__main__':
+	argparse_parse(globals())
