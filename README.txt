@@ -23,6 +23,9 @@ mdf afc put myfile.txt /var/mobile/Media/
 
 at any point append -h to the command line to get more help
 
+In general I recommend you install the package if you're ever going to write 
+scripts using it, or just fancy typing less characters.
+
 Project Structure
 -----------------
 
@@ -46,7 +49,7 @@ To list all files on the file system:
 -------------------------------------
 from command line:
 
-python MobileDevice/ afc ls /var/mobile/Media
+mdf afc ls /var/mobile/Media
 
 or in code:
 
@@ -78,7 +81,7 @@ To retrieve a .cpio.gz file of all the readonly special data (crashlogs etc)
 ----------------------------------------------------------------------------
 from command line:
 
-python ./ filerelay dump.cpio.gz
+mdf filerelay dump.cpio.gz
 
 or in code:
 
@@ -112,7 +115,7 @@ To read and print all syslog messages
 -------------------------------------
 from command line:
 
-python ./ syslog
+mdf syslog
 
 or in code:
 
