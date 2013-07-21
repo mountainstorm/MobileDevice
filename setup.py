@@ -46,7 +46,7 @@ def getcommit():
 
 setup(
 	name=u'Distutils',
-	version=u'1.0.' + getcommit(),
+	version=u'1.0' + getcommit(),
 	description=u'A python package, and command line tool, which wraps Apple\'s MobileDevice API - providing access to iOS devices',
 	long_description = readfile(u'README.txt'),
 	author=u'Cooper',
