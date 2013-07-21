@@ -102,6 +102,20 @@ def register_argparse_install(cmdargs):
 		pprint.pprint(pxy.lookup_applications())
 		pxy.disconnect()
 
+	def cmd_listapps(args, dev):
+		pxy = InstallationProxy(dev)
+		apps = {}
+		maxappid = 0
+		for app in pxy.lookup_applications():
+			appid = app[u'CFBundleIdentifier']
+			apps[appid] = app[u'Path']
+			if len(appid) > maxappid:
+				maxappid = len(appid)
+		pxy.disconnect()
+		for appid in sorted(apps.keys()):
+			apppath = apps[appid]
+			print(appid.ljust(maxappid) + u' ' + apppath)
+
 	installparser = cmdargs.add_parser(
 		u'install', 
 		help=u'installation proxy commands'
@@ -111,8 +125,14 @@ def register_argparse_install(cmdargs):
 	# browse command
 	browsecmd = installcmd.add_parser(
 		u'browse',
-		help=u'launches an application'
+		help=u'list all information about applications on the device'
 	)
 	browsecmd.set_defaults(func=cmd_browse)
 
+	# listappid command
+	listappscmd = installcmd.add_parser(
+		u'listapps',
+		help=u'lists all application ids'
+	)
+	listappscmd.set_defaults(func=cmd_listapps)
 
