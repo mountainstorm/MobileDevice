@@ -9,19 +9,19 @@ features command line interface.
 
 You can run the project directory as a package e.g.
 
-python MobileDevice/ afc put myfile.txt /var/mobile/Media/
+*python MobileDevice/ afc put myfile.txt /var/mobile/Media/*
 
 or:
 
-python MobileDevice.zip afc put myfile.txt /var/mobile/Media/
+*python MobileDevice.zip afc put myfile.txt /var/mobile/Media/*
 
 or, if you install the library using: sudo python setup.py install
 
-mdf afc put myfile.txt /var/mobile/Media/
+*mdf afc put myfile.txt /var/mobile/Media/*
 
 (will upload a file to the device)
 
-at any point append -h to the command line to get more help
+at any point append *-h* to the command line to get more help
 
 In general I recommend you install the package if you're ever going to write 
 scripts using it, or just fancy typing less characters.
@@ -32,9 +32,7 @@ Project Structure
 
 The basic structure of the package is as follows:
 
-MobileDevice.py: this is a bare bones ctypes wrapper over the native C library; 
-see here for documentation of the basic API
-http://theiphonewiki.com/wiki/MobileDevice_Library#MobileDevice_Header_.28MobileDevice.h.29
+MobileDevice.py: this is a bare bones ctypes wrapper over the native C library
 
 CoreFoundation.py: this is a simple ctypes wrapper around CoreFoundation and a
 few helper methods to convert between CFTypes and python types
@@ -50,94 +48,94 @@ To list all files on the file system:
 -------------------------------------
 from command line:
 
-mdf afc ls /var/mobile/Media
+*mdf afc ls /var/mobile/Media*
 
 or in code:
 
-from MobileDevice import *
+	from MobileDevice import *
 
-def printdir(afc, path):
-	for name in afc.listdir(path):
-		isdir = u''
-		if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
-			isdir = u'/'
-		print path + name + isdir
-		if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
-			printdir(afc, path + name + isdir)
-
-def factory(dev):
-	d = AMDevice(dev)
-	d.connect()
-	afc = AFC(d)
-
-	printdir(afc, u'/var/mobile/Media') # recursive print of all files visible
-
-	afc.disconnect()
-	return d
-
-handle_devices(factory)
+	def printdir(afc, path):
+		for name in afc.listdir(path):
+			isdir = u''
+			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
+				isdir = u'/'
+			print path + name + isdir
+			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
+				printdir(afc, path + name + isdir)
+	
+	def factory(dev):
+		d = AMDevice(dev)
+		d.connect()
+		afc = AFC(d)
+	
+		printdir(afc, u'/var/mobile/Media') # recursive print of all files visible
+	
+		afc.disconnect()
+		return d
+	
+	handle_devices(factory)
 
 
 To retrieve a .cpio.gz file of all the readonly special data (crashlogs etc)
 ----------------------------------------------------------------------------
 from command line:
 
-mdf filerelay dump.cpio.gz
+*mdf filerelay dump.cpio.gz*
 
 or in code:
 
-from MobileDevice import *
+	from MobileDevice import *
 
-def factory(dev):
-	d = AMDevice(dev)
-	d.connect()
-	fr = FileRelay(d)
+	def factory(dev):
+		d = AMDevice(dev)
+		d.connect()
+		fr = FileRelay(d)
 
-	f = open(u'dump.cpio.gz', 'wb')
-	f.write(fr.retrieve([
-		u'AppleSupport',
-		u'Network',
-		u'VPN',
-		u'WiFi',
-		u'UserDatabases',
-		u'CrashReporter',
-		u'tmp',
-		u'SystemConfiguration'
-	]))
-	f.close()
+		f = open(u'dump.cpio.gz', 'wb')
+		f.write(fr.retrieve([
+			u'AppleSupport',
+			u'Network',
+			u'VPN',
+			u'WiFi',
+			u'UserDatabases',
+			u'CrashReporter',
+			u'tmp',
+			u'SystemConfiguration'
+		]))
+		f.close()
 
-	fr.disconnect()
-	return d
+		fr.disconnect()
+		return d
 
-handle_devices(factory)
+	handle_devices(factory)
 
 
 To read and print all syslog messages
 -------------------------------------
 from command line:
 
-mdf syslog
+*mdf syslog*
 
 or in code:
 
-from MobileDevice import *
-import sys
+	from MobileDevice import *
+	import sys
 
-def factory(dev):
-	d = AMDevice(dev)
-	d.connect()
-	sl = Syslog(d)
+	def factory(dev):
+		d = AMDevice(dev)
+		d.connect()
+		sl = Syslog(d)
 
-	while True:
-		msg = sl.read()
-		if msg is None:
-			break
-		sys.stdout.write(msg)
+		while True:
+			msg = sl.read()
+			if msg is None:
+				break
+			sys.stdout.write(msg)
 
-	sl.disconnect()
-	return d
+		sl.disconnect()
+		return d
 
-handle_devices(factory)
+	handle_devices(factory)
 
 
 Keywords
