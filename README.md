@@ -1,5 +1,5 @@
 MobileDevice.py
----------------
+===============
 
 A python package which aims to wrap Apple's MobileDevice API; to provide 
 complete support for all iOS, device services.
@@ -25,6 +25,7 @@ at any point append -h to the command line to get more help
 
 In general I recommend you install the package if you're ever going to write 
 scripts using it, or just fancy typing less characters.
+
 
 Project Structure
 -----------------
