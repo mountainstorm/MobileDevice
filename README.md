@@ -9,15 +9,15 @@ features command line interface.
 
 You can run the project directory as a package e.g.
 
-*python MobileDevice/ afc put myfile.txt /var/mobile/Media/*
+**python MobileDevice/ afc put myfile.txt /var/mobile/Media/**
 
 or:
 
-*python MobileDevice.zip afc put myfile.txt /var/mobile/Media/*
+**python MobileDevice.zip afc put myfile.txt /var/mobile/Media/**
 
 or, if you install the library using: sudo python setup.py install
 
-*mdf afc put myfile.txt /var/mobile/Media/*
+**mdf afc put myfile.txt /var/mobile/Media/**
 
 (will upload a file to the device)
 
@@ -48,7 +48,7 @@ To list all files on the file system:
 -------------------------------------
 from command line:
 
-*mdf afc ls /var/mobile/Media*
+**mdf afc ls /var/mobile/Media**
 
 or in code:
 
@@ -63,79 +63,70 @@ or in code:
 			if afc.lstat(path + name).st_ifmt == stat.S_IFDIR:
 				printdir(afc, path + name + isdir)
 	
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		afc = AFC(d)
-	
-		printdir(afc, u'/var/mobile/Media') # recursive print of all files visible
-	
-		afc.disconnect()
-		return d
-	
-	handle_devices(factory)
+	dev = list_devices()[0]
+	d = AMDevice(dev)
+	d.connect()
+	afc = AFC(d)
+
+	printdir(afc, u'/var/mobile/Media') # recursive print of all files visible
+
+	afc.disconnect()
 
 
 To retrieve a .cpio.gz file of all the readonly special data (crashlogs etc)
 ----------------------------------------------------------------------------
 from command line:
 
-*mdf filerelay dump.cpio.gz*
+**mdf filerelay dump.cpio.gz**
 
 or in code:
 
 	from MobileDevice import *
 
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		fr = FileRelay(d)
+	dev = list_devices()[0]
+	d = AMDevice(dev)
+	d.connect()
+	fr = FileRelay(d)
 
-		f = open(u'dump.cpio.gz', 'wb')
-		f.write(fr.retrieve([
-			u'AppleSupport',
-			u'Network',
-			u'VPN',
-			u'WiFi',
-			u'UserDatabases',
-			u'CrashReporter',
-			u'tmp',
-			u'SystemConfiguration'
-		]))
-		f.close()
+	f = open(u'dump.cpio.gz', 'wb')
+	f.write(fr.retrieve([
+		u'AppleSupport',
+		u'Network',
+		u'VPN',
+		u'WiFi',
+		u'UserDatabases',
+		u'CrashReporter',
+		u'tmp',
+		u'SystemConfiguration'
+	]))
+	f.close()
 
-		fr.disconnect()
-		return d
-
-	handle_devices(factory)
+	fr.disconnect()
 
 
 To read and print all syslog messages
 -------------------------------------
 from command line:
 
-*mdf syslog*
+**mdf syslog**
 
 or in code:
 
 	from MobileDevice import *
 	import sys
 
-	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		sl = Syslog(d)
+	dev = list_devices()[0]
+	d = AMDevice(dev)
+	d.connect()
+	sl = Syslog(d)
 
-		while True:
-			msg = sl.read()
-			if msg is None:
-				break
-			sys.stdout.write(msg)
+	while True:
+		msg = sl.read()
+		if msg is None:
+			break
+		sys.stdout.write(msg)
 
-		sl.disconnect()
-		return d
-
-	handle_devices(factory)
+	sl.disconnect()
 
 
 Keywords
