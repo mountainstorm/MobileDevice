@@ -668,6 +668,7 @@ def argparse_parse(scope):
 			for k in sorted(self._devs.keys()):
 				v = self._devs[k]
 				try:
+					v.connect()
 					name = v.get_value(name=u'DeviceName')
 					retval += u'  %u: %s - "%s"\n' % (
 						i, 
@@ -676,6 +677,8 @@ def argparse_parse(scope):
 					)
 				except:
 					retval += u'  %u: %s\n' % (i, k)
+				finally:
+					v.disconnect()
 				i = i + 1
 			return retval			
 
