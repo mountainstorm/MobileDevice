@@ -648,6 +648,9 @@ def argparse_parse(scope):
 						self.device_idx = 0 # default to first device
 					k = devs[self.device_idx]
 					v = self._devs[k]
+
+					# connect before trying to get device name
+					v.connect(args.advanced)
 					name = u''
 					try:
 						name = v.get_value(name=u'DeviceName')
@@ -658,7 +661,6 @@ def argparse_parse(scope):
 						v.get_deviceid(), 
 						name.decode(u'utf-8')
 					))
-					v.connect(args.advanced)
 					args.func(args, v)
 					v.disconnect()
 
