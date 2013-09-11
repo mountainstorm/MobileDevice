@@ -48,7 +48,7 @@ setup(
 	name=u'Distutils',
 	version=u'1.0' + getcommit(),
 	description=u'A python package, and command line tool, which wraps Apple\'s MobileDevice API - providing access to iOS devices',
-	long_description = readfile(u'README.txt'),
+	long_description = readfile(u'README.md'),
 	author=u'Cooper',
 	url=u'https://github.com/mountainstorm/MobileDevice',
 	classifiers = [
@@ -65,7 +65,7 @@ setup(
 		u'Topic :: Software Development :: Libraries :: Python Modules',
 		u'Topic :: Utilities',
 	],
-	license= readfile(u'LICENSE.txt'),
+	license= readfile(u'LICENSE'),
 	packages=['MobileDevice'],
 	package_dir={'': u'../'},
 	scripts=[u'mdf']
