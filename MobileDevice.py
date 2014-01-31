@@ -435,13 +435,13 @@ AMDeviceValidatePairing.argtypes = [AMDeviceRef]
 # XXX AMDeviceWakeupUsingToken
 
 # XXX this is wrong - needs a cfdata somewhere
-AMDeviceConnectByAddressAndPort = MobileDevice._AMDeviceConnectByAddressAndPort
-AMDeviceConnectByAddressAndPort.restype = mach_error_t
-AMDeviceConnectByAddressAndPort.argtypes = [
-	AMDeviceRef, 
-	c_ushort, 
-	POINTER(c_int32)
-]
+#AMDeviceConnectByAddressAndPort = MobileDevice._AMDeviceConnectByAddressAndPort
+#AMDeviceConnectByAddressAndPort.restype = mach_error_t
+#AMDeviceConnectByAddressAndPort.argtypes = [
+#	AMDeviceRef, 
+#	c_ushort, 
+#	POINTER(c_int32)
+#]
 
 
 #AMD* methods
