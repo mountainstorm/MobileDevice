@@ -350,6 +350,10 @@ CFCopyTypeIDDescription.argtypes = [CFTypeID]
 # CFUUID
 CFUUIDRef = c_void_p
 
+CFUUIDGetTypeID = CoreFoundation.CFUUIDGetTypeID
+CFUUIDGetTypeID.restype = CFTypeID
+CFUUIDGetTypeID.argtypes = []
+
 CFUUIDGetConstantUUIDWithBytes = CoreFoundation.CFUUIDGetConstantUUIDWithBytes
 CFUUIDGetConstantUUIDWithBytes.restype = CFUUIDRef
 CFUUIDGetConstantUUIDWithBytes.argtypes = [CFAllocatorRef, 
@@ -380,6 +384,10 @@ class CFUUIDBytes(Structure):
 CFUUIDGetUUIDBytes = CoreFoundation.CFUUIDGetUUIDBytes
 CFUUIDGetUUIDBytes.restype = CFUUIDBytes
 CFUUIDGetUUIDBytes.argtypes = [CFUUIDRef]
+
+CFUUIDCreateFromString = CoreFoundation.CFUUIDCreateFromString
+CFUUIDCreateFromString.restype = CFUUIDRef
+CFUUIDCreateFromString.argtypes = [CFAllocatorRef, CFStringRef]
 
 
 # CFSet
@@ -467,6 +475,7 @@ def CFTypeTo(value):
 		buf = create_string_buffer(bufsize)
 		CFStringGetCString(value, buf, bufsize, kCFStringEncodingUTF8)
 		retval = buf.value
+
 	elif typeid == CFDataGetTypeID():
 		retval = string_at(CFDataGetBytePtr(value), CFDataGetLength(value))
 

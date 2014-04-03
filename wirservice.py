@@ -51,7 +51,7 @@ class WIRService(PlistService):
 	def _recvmsg(self):
 		wi = ''
 		wimsg = PlistService._recvmsg(self)
-		while u'WIRPartialMessageKey' in wimsg:
+		while wimsg and u'WIRPartialMessageKey' in wimsg:
 			wi += wimsg[u'WIRPartialMessageKey']
 			wimsg = PlistService._recvmsg(self)
 		wi += wimsg[u'WIRFinalMessageKey']

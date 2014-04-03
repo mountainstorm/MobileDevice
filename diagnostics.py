@@ -66,7 +66,7 @@ class Diagnostics(PlistService):
 
 	def _chkresult(self, result):
 		retval = False
-		if result[u'Status'] == u'Success':
+		if u'Status' in result and result[u'Status'] == u'Success':
 			retval = True
 		return retval
 
