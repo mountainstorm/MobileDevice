@@ -504,10 +504,9 @@ def handle_devices(factory):
 
 	Typical Example:
 	def factory(dev):
-		d = AMDevice(dev)
-		d.connect()
-		pprint.pprint(d.get_value())
-		return d
+		dev.connect()
+		pprint.pprint(dev.get_value())
+		dev.disconnect()
 
 	Arguments:
 	factory -- the callback function, called on device arrival
@@ -521,7 +520,8 @@ def handle_devices(factory):
 	def cbFunc(info, cookie):
 		info = info.contents
 		if info.message == ADNCI_MSG_CONNECTED:
-			devices[info.device] = factory(info.device)
+			devices[info.device] = AMDevice(info.device)
+			factory(devices[info.device])
 
 		elif info.message == ADNCI_MSG_DISCONNECTED:
 			devices[info.device].disconnect()
