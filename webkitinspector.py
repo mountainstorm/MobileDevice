@@ -26,6 +26,7 @@ from MobileDevice import *
 from amdevice import *
 from wirservice import *
 import uuid
+import json
 
 
 # Talk to safari using:
@@ -77,6 +78,8 @@ class WebKitInspector(WIRService):
 			}
 		)
 		retval = self._recvmsg()
+		while retval[0] != u'_rpc_applicationSentListing:':
+			retval = self._recvmsg()
 		return retval[1]
 
 	# highlight a webview page
@@ -131,6 +134,29 @@ class WebKitInspector(WIRService):
 		)
 		print self._recvmsg()
 
+	def navigate(self, url):
+		conn = self.uniqueid()
+		app = u'com.apple.mobilesafari'
+
+		self.reportIdentifier(conn)
+		self.getConnectedApplications(conn)
+		listing = self.forwardGetListing(conn, app)
+		pages = listing[u'WIRListingKey']
+
+		ident = int(pages.values()[0][u'WIRPageIdentifierKey'])
+		session = self.uniqueid()
+		self.forwardSocketSetup(conn, app, ident, session)
+		data = {
+			u'id': ident,
+			u'method': u'Page.navigate',
+			u'params': {
+				u'url': (
+					url
+				)
+			}
+		}
+		print self.forwardSocketData(conn, app, ident, session, json.dumps(data))
+
 
 
 def register_argparse_webinspector(cmdargs):
@@ -138,42 +164,25 @@ def register_argparse_webinspector(cmdargs):
 	import sys
 	import mimetypes
 	import base64
-	import json
+
+	def cmd_load(args, dev):
+		mimetype = mimetypes.guess_type(args.path)
+		f = open(args.path, u'rb')
+		content = f.read()
+		f.close()
+		
+		# wakeup device
+		# switch to safari?
+		wi = WebKitInspector(dev)
+		wi.navigate(u'data:' + mimetype[0] + u';base64,' + base64.b64encode(content))
+		wi.disconnect()
+
 
 	def cmd_navigate(args, dev):
 		# wakeup device
 		# switch to safari?
 		wi = WebKitInspector(dev)
-		conn = wi.uniqueid()
-		app = u'com.apple.mobilesafari'
-
-		wi.reportIdentifier(conn)
-		wi.getConnectedApplications(conn)
-		listing = wi.forwardGetListing(conn, app)
-		pages = listing[u'WIRListingKey']
-
-		ident = int(pages.values()[0][u'WIRPageIdentifierKey'])
-		session = wi.uniqueid()
-		wi.forwardSocketSetup(conn, app, ident, session)
-
-		mimetype = mimetypes.guess_type(args.path)
-		
-		f = open(args.path, u'rb')
-		content = f.read()
-		f.close()
-
-		data = {
-			u'id': ident,
-			u'method': u'Page.navigate',
-			u'params': {
-				u'url': (
-					u'data:' + mimetype[0] + 
-					u';base64,' + base64.b64encode(content)
-				)
-			}
-		}
-
-		print wi.forwardSocketData(conn, app, ident, session, json.dumps(data))
+		wi.navigate(args.url.decode(u'utf-8'))
 		wi.disconnect()
 
 	webparser = cmdargs.add_parser(
@@ -182,17 +191,28 @@ def register_argparse_webinspector(cmdargs):
 	)
 	webcmd = webparser.add_subparsers()
 
-	# navigate command
-	navigatecmd = webcmd.add_parser(
-		u'navigate',
-		help=u'navigates a single safari window to the specified url'
+	# load command
+	loadcmd = webcmd.add_parser(
+		u'load',
+		help=u'loads a single safari window with the specified file'
 	)
-	navigatecmd.add_argument(
+	loadcmd.add_argument(
 		u'path',
 		help=u'the file to load (as a data: url) into the first page of mobilesafari'
 	)
-	navigatecmd.set_defaults(func=cmd_navigate)
+	loadcmd.set_defaults(func=cmd_load)
 
+
+	# navigate command
+	navigatecmd = webcmd.add_parser(
+		u'navigate',
+		help=u'navigate a single safari window with the specified url'
+	)
+	navigatecmd.add_argument(
+		u'url',
+		help=u'the url to navigate the first page of mobilesafari to'
+	)
+	navigatecmd.set_defaults(func=cmd_navigate)
 
 
 
