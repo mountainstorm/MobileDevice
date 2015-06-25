@@ -36,8 +36,8 @@ class AMDevice(object):
 
 	# XXX add recovery mode features - move them into anoher file
 
-	INTERFACE_WIFI = 0 # XXX check this
 	INTERFACE_USB = 1
+	INTERFACE_WIFI = 2
 
 	BUDDY_SETID = 0x1
 	BUDDY_WIFI = 0x2
@@ -712,14 +712,16 @@ def register_argparse_dev(cmdargs):
 			AMDevice.INTERFACE_USB: u'USB',
 			AMDevice.INTERFACE_WIFI: u'WIFI'
 		}
+		device_type = dev.get_interface_type()
 		print(u'  identifier: %s' % dev.get_deviceid())
-		print(u'  interface type: %s' % iface_types[dev.get_interface_type()])
+		print(u'  interface type: %s' % iface_types[device_type])
 		print(u'  interface speed: %sps' % 
 			get_number_in_units(int(dev.get_interface_speed()))
 		)
 		print(u'  location: 0x%x' % dev.get_location())
-		print(u'  usb device id: 0x%x' % dev.get_usb_deviceid())
-		print(u'  usb product id: 0x%x' % dev.get_usb_productid())
+		if device_type is AMDevice.INTERFACE_USB:
+			print(u'  usb device id: 0x%x' % dev.get_usb_deviceid())
+			print(u'  usb product id: 0x%x' % dev.get_usb_productid())
 		
 	def cmd_get(args, dev):
 		if args.domain is not None or args.key is not None:
