@@ -83,7 +83,9 @@ class AFCFile(object):
 		if mode.find(u'r') != -1:
 			self.mode |= 0x1
 		if mode.find(u'w') != -1:
-			self.mode |= 0x2 
+			self.mode |= 0x2
+		if mode.find(u'a') != -1:
+			self.mode |= 0x3
 		self.f = AFCFileRef()
 		self.closed = True
 		if AFCFileRefOpen(
@@ -115,12 +117,13 @@ class AFCFile(object):
 		raise NotImplementedError()
 
 	def seek(self, offset, whence=os.SEEK_SET):
-		if AFCFileRefSeek(
-				self.afc_con, 
-				self.f, offset, 
-				whence,
-				byref(idx), 0) != MDERR_OK:
-			raise ValueError(u'Unable to set file location')
+		res = AFCFileRefSeek(
+				self.afc_con,
+				self.f,
+				offset,
+				whence)
+		if res != MDERR_OK:
+			raise ValueError(u'Unable to set file location %s' % res)
 
 	def seekable(self):
 		return True
