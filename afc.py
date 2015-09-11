@@ -77,8 +77,8 @@ def _stat_from_afcdict(afcdict):
 
 class AFCFile(object):
 	# XXX creation, read, write, seek tell etc
-	def __init__(self, afc_con, path, mode):
-		self.afc_con = afc_con
+	def __init__(self, afc, path, mode):
+		self.afc_con = afc.get_con()
 		self.mode = 0
 		if mode.find(u'r') != -1:
 			self.mode |= 0x1
@@ -86,15 +86,20 @@ class AFCFile(object):
 			self.mode |= 0x2
 		if mode.find(u'a') != -1:
 			self.mode |= 0x3
+
 		self.f = AFCFileRef()
 		self.closed = True
+
 		if AFCFileRefOpen(
-				self.afc_con, 
-				path.encode(u'utf-8'), 
-				self.mode, 
+				self.afc_con,
+				path.encode(u'utf-8'),
+				self.mode,
 				byref(self.f)) != MDERR_OK:
 			raise IOError(u'Unable to open file:', path, mode)
 		self.closed = False
+		if mode.find(u'a') != -1:
+			size = int(afc.lstat(path).st_size)
+			self.seek(size)
 
 	def __del__(self):
 		self.close()
@@ -196,6 +201,9 @@ class AFC(object):
 		self.afc_con = AFCConnectionRef()
 		if AFCConnectionOpen(self.s, 0, byref(self.afc_con)) != MDERR_OK:
 			raise RuntimeError(u'Unable to open AFC connection')
+
+	def get_con(self):
+		return self.afc_con
 
 	def disconnect(self):
 		AFCConnectionClose(self.afc_con)
@@ -300,6 +308,6 @@ class AFC(object):
 			raise OSError(u'Unable to remove file:', path)
 
 	def open(self, path, mode):
-		return AFCFile(self.afc_con, path, mode)
+		return AFCFile(self, path, mode)
 
 
