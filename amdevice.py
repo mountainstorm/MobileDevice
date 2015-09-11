@@ -633,7 +633,7 @@ def argparse_parse(scope):
 			args = self._parser.parse_args(namespace=self)
 			i = 0
 			if u'listing' in dir(self):
-				sys.stdout.write(self._print_devices())
+				sys.stdout.write(self._print_devices().encode("utf-8"))
 
 			else:
 				if len(self._devs) > 0:
