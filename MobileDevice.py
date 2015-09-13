@@ -556,7 +556,6 @@ AFCFileRefSeek.restype = AFCError
 AFCFileRefSeek.argtypes = [
 	AFCConnectionRef,
 	AFCFileRef,
-	CFIndex,
 	c_int32,
 	c_int32
 ]
