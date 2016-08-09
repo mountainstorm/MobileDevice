@@ -66,12 +66,14 @@ class PlistService(object):
 		if self.bigendian:
 			endian = u'<I'
 		length = os.read(self.s, 4)
+		#print "_recvmsg - %d: %s" % (len(length), length)
 		if length is not None and len(length) == 4:
 			l = struct.unpack(endian.encode(u'utf-8'), length)[0]
 			reply = ''
 			left = l
 			while left > 0:
 				r = os.read(self.s, left) 
+				#print "  _recvmsg - %d: %s" % (len(r), r)
 				if r is None:
 					raise RuntimeError(u'Unable to read reply')
 				reply += r
