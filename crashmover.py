@@ -100,7 +100,10 @@ def register_argparse_crashmover(cmdargs):
 			if info.st_ifmt == stat.S_IFDIR:
 				dirlist.append(posixpath.join(path, name))
 			else:
-				afc.remove(posixpath.join(path, name))
+				try:
+					afc.remove(posixpath.join(path, name))
+				except:
+					print('unable to remove file: %s' % name)
 
 		for name in dirlist:
 			del_logs(afc, name)
