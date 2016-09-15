@@ -31,6 +31,7 @@ import json
 
 # Talk to safari using:
 # https://developers.google.com/chrome-developer-tools/docs/protocol/1.0/index
+# https://webkit.googlesource.com/WebKit/+/825dea3b415c86cc86ff4a4dabe4ebc9b1ab9b75/Source/WebKit/mac/WebInspector/remote/WebInspectorServerWebViewConnectionController.mm
 class WebKitInspector(WIRService):
 	def __init__(self, amdevice):
 		WIRService.__init__(self, amdevice, [AMSVC_WEBINSPECTOR])
@@ -54,7 +55,7 @@ class WebKitInspector(WIRService):
 			}
 		)
 		retval = self._recvmsg()
-		retval = self._recvmsg() # discard the getConnectedApplications response
+		retval = self._recvmsg() # get the getConnectedApplications response
 		return retval[1]
 
 	# list avaliable applications
@@ -84,7 +85,7 @@ class WebKitInspector(WIRService):
 
 	# highlight a webview page
 	def forwardIndicateWebView(self, connection_uuid, appid, pageid, enable):
-		self.sendmsg(
+		self._sendmsg(
 			u'_rpc_forwardIndicateWebView:',
 			{
 				u'WIRConnectionIdentifierKey': connection_uuid,
@@ -93,7 +94,7 @@ class WebKitInspector(WIRService):
 				u'WIRIndicateEnabledKey': enable
 			}
 		)
-		print self._recvmsg()
+		return self._recvmsg()[1]
 
 	# setup a webkit protocol connection
 	def forwardSocketSetup(self, connection_uuid, appid, pageid, sender_uuid):
@@ -106,10 +107,10 @@ class WebKitInspector(WIRService):
 				u'WIRSenderKey': sender_uuid
 			}
 		)
-		self._recvmsg() # throw away the forwardGetListing response
+		#self._recvmsg() # throw away the forwardGetListing response
 
 	# send webkit protocol message
-	def forwardSocketData(self, connection_uuid, appid, pageid, sender_uuid, jsonmsg):
+	def forwardSocketData(self, connection_uuid, appid, pageid, sender_uuid, msg):
 		self._sendmsg(
 			u'_rpc_forwardSocketData:',
 			{ 
@@ -117,10 +118,9 @@ class WebKitInspector(WIRService):
 				u'WIRApplicationIdentifierKey': appid,
 				u'WIRPageIdentifierKey': pageid,
 				u'WIRSenderKey': sender_uuid,
-				u'WIRSocketDataKey': jsonmsg.encode(u'utf-8')
+				u'WIRSocketDataKey': msg
 			}
 		)
-		return self._recvmsg()[1]
 
 	def forwardDidClose(self, connection_uuid, appid, pageid, sender_uuid):
 		self.sendmsg(
@@ -139,23 +139,42 @@ class WebKitInspector(WIRService):
 		app = u'com.apple.mobilesafari'
 
 		self.reportIdentifier(conn)
-		self.getConnectedApplications(conn)
-		listing = self.forwardGetListing(conn, app)
-		pages = listing[u'WIRListingKey']
+		# XXX: why does lockdownd show as a connected app?
+		self.forwardGetListing(conn, app)
 
-		ident = int(pages.values()[0][u'WIRPageIdentifierKey'])
 		session = self.uniqueid()
+		listing = self.forwardIndicateWebView(conn, app, 1, session)
+
+		pages = listing[u'WIRListingKey']
+		ident = 1 #int(pages.values()[0][u'WIRPageIdentifierKey'])
 		self.forwardSocketSetup(conn, app, ident, session)
-		data = {
-			u'id': ident,
+		self.forwardSocketData(conn, app, ident, session, {
+			u'id': 1,
+			u'method': u'Inspector.enable'
+		})
+		self.forwardSocketData(conn, app, ident, session, {
+			u'id': 2,
+			u'method': u'CSS.getSupportedCSSProperties'
+		})
+		self.forwardSocketData(conn, app, ident, session, {
+			u'id': 3,
+			u'method': u'Page.enable'
+		})
+		self.forwardSocketData(conn, app, ident, session, {
+			u'id': 4,
+			u'method': u'Network.enable'
+		})		
+		self.forwardSocketData(conn, app, ident, session, {
+			u'id': 5,
 			u'method': u'Page.navigate',
 			u'params': {
 				u'url': (
 					url
 				)
 			}
-		}
-		print self.forwardSocketData(conn, app, ident, session, json.dumps(data))
+		})
+		print('recv')
+		self._recvmsg()
 
 
 
